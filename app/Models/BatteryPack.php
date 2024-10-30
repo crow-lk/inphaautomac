@@ -20,4 +20,16 @@ class BatteryPack extends Model
     {
         return $this->hasMany(Module::class);
     }
+
+    //boot method to set name for new battery pack
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($batteryPack) {
+            //naming convension is NU-0000001, NU-0000002, etc
+            $nextId = self::max('id') + 1;
+            $batteryPack->name = 'NU-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+        });
+    }
 }
