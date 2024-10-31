@@ -57,11 +57,11 @@ class ModuleResource extends Resource
                     
 
 
-                Tables\Columns\TextColumn::make('capacitance')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('capacitance')->sortable()->searchable()->formatStateUsing(fn (string $state): string => $state . ' mAh'),
                 Tables\Columns\TextColumn::make('batteryPack.name')
                     ->label('Battery Pack')
                     ->sortable()
-                    ->searchable() ->formatStateUsing(fn (string $state): string => $state . ' mAh'),
+                    ->searchable(),
                 //checkbox colomn to mark inpha auto mac owned modules
                 Tables\Columns\CheckboxColumn::make('is_inpha_auto_mac_owned')
                     ->label('Inpha Auto Mac Owned')
