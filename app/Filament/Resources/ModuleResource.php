@@ -46,15 +46,55 @@ class ModuleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('serial_number')->sortable()->searchable(),
 
-                Tables\Columns\TextInputColumn::make('ir_value')
+                Tables\Columns\TextColumn::make('ir_value')
                     ->sortable()
                     ->searchable()
-                    ->label('IR Value (mΩ)')              
-                    ,
-                    
+                    ->label('IR Value (mΩ)')->alignEnd(),
 
+                Tables\Columns\TextColumn::make('capacitance')->sortable()->searchable()->label('Capacitance (mAh)')->alignEnd(),
 
-                Tables\Columns\TextInputColumn::make('capacitance')->sortable()->searchable()->label('Capacitance (mAh)'),
+                //grade the battery pack based on the capacitance
+
+                Tables\Columns\TextColumn::make('grade')
+                    ->label('Grade')
+                    ->sortable()
+                    ->getStateUsing(function ($record) {
+                        $capacity = $record->capacitance;
+
+                        if (is_null($capacity)) {
+                            return 'N/A';
+                        } elseif ($capacity >= 4000 && $capacity <= 5000) {
+                            return 'A';
+                        } elseif ($capacity >= 3000 && $capacity < 4000) {
+                            return 'B';
+                        } elseif ($capacity >= 2000 && $capacity < 3000) {
+                            return 'C';
+                        } elseif ($capacity >= 1000 && $capacity < 2000) {
+                            return 'D';
+                        } else {
+                            return 'E';
+                        }
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'A' => 'success',    // Green color for A grade
+                        'B' => 'primary',    // Blue color for B grade
+                        'C' => 'warning',    // Yellow color for C grade
+                        'D' => 'danger',     // Red color for D grade
+                        'E' => 'gray',       // Gray color for E grade
+                        'N/A' => 'secondary' // Light gray for N/A
+                    })->alignCenter(),
+
+                //4th letter of the serial number from A-Z. equal to the battery pack manufacture year A=1999, B=2000, etc
+                Tables\Columns\TextColumn::make('batteryPack.manufacture_year')
+                    ->label('Manufacture Year')
+                    ->sortable()
+                    ->searchable()
+                    ->getStateUsing(function ($record) {
+                        $letter = strtoupper(substr($record->serial_number, 3, 1)); // Get the fourth letter
+                        $baseYear = 1999; // Base year for 'A'
+                        $yearOffset = ord($letter) - ord('A'); // Calculate the offset from 'A'
+                        return $baseYear + $yearOffset;
+                    })->alignCenter(),
                 Tables\Columns\TextColumn::make('batteryPack.name')
                     ->label('Battery Pack')
                     ->sortable()
