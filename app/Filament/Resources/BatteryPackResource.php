@@ -79,4 +79,11 @@ class BatteryPackResource extends Resource
             'index' => Pages\ManageBatteryPacks::route('/'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            BatteryPackResource\Widgets\BatteryPacksOverview::class,
+        ];
+    }
 }
