@@ -44,7 +44,6 @@ class ModuleResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')->sortable()->searchable()->label('Nuvant Number'),
                 Tables\Columns\TextColumn::make('serial_number')->sortable()->searchable(),
 
                 Tables\Columns\TextColumn::make('ir_value')
