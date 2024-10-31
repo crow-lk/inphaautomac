@@ -46,17 +46,15 @@ class ModuleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('serial_number')->sortable()->searchable(),
 
-                Tables\Columns\TextColumn::make('ir_value')
+                Tables\Columns\TextInputColumn::make('ir_value')
                     ->sortable()
                     ->searchable()
-                    ->label('IR Value (mΩ)')
-                    //show values with the units mili Ohms
-                    ->formatStateUsing(fn (string $state): string => $state . ' mΩ')                
+                    ->label('IR Value (mΩ)')              
                     ,
                     
 
 
-                Tables\Columns\TextColumn::make('capacitance')->sortable()->searchable()->label('Capacitance (mAh)'),
+                Tables\Columns\TextInputColumn::make('capacitance')->sortable()->searchable()->label('Capacitance (mAh)'),
                 Tables\Columns\TextColumn::make('batteryPack.name')
                     ->label('Battery Pack')
                     ->sortable()
