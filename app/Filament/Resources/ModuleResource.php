@@ -35,7 +35,7 @@ class ModuleResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('serial_number')->required(),
                 Forms\Components\TextInput::make('ir_value')->required()->nullable()->numeric(),
-                Forms\Components\TextInput::make('capacitance')->required()->nullable(),
+                Forms\Components\TextInput::make('capacitance')->required()->nullable()->numeric(),
                 Forms\Components\Select::make('battery_pack_id')->relationship('batteryPack', 'name')->required()->searchable(),
             ]);
     }
@@ -46,12 +46,17 @@ class ModuleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('serial_number')->sortable()->searchable(),
 
-                Tables\Columns\TextColumn::make('ir_value')
+                Tables\Columns\TextInputColumn::make('ir_value')
                     ->sortable()
                     ->searchable()
-                    ->label('IR Value (mΩ)')->alignEnd(),
+                    ->label('IR Value (mΩ)')->alignEnd()->type('number')->rules(['regex:/^\d{1,3}$/']),
 
-                Tables\Columns\TextColumn::make('capacitance')->sortable()->searchable()->label('Capacitance (mAh)')->alignEnd(),
+                Tables\Columns\TextInputColumn::make('capacitance')
+                    ->sortable()
+                    ->searchable()
+                    ->label('Capacitance (mAh)')
+                    ->alignEnd()
+                    ->rules(['regex:/^\d{1,4}$/']),
 
                 //grade the battery pack based on the capacitance
 
@@ -88,7 +93,6 @@ class ModuleResource extends Resource
                 Tables\Columns\TextColumn::make('batteryPack.manufacture_year')
                     ->label('Manufacture Year')
                     ->sortable()
-                    ->searchable()
                     ->getStateUsing(function ($record) {
                         $letter = strtoupper(substr($record->serial_number, 3, 1)); // Get the fourth letter
                         $baseYear = 1999; // Base year for 'A'
@@ -97,13 +101,11 @@ class ModuleResource extends Resource
                     })->alignCenter(),
                 Tables\Columns\TextColumn::make('batteryPack.name')
                     ->label('Battery Pack')
-                    ->sortable()
-                    ->searchable(),
+                    ->sortable(),
                 //checkbox colomn to mark inpha auto mac owned modules
                 Tables\Columns\CheckboxColumn::make('is_inpha_auto_mac_owned')
                     ->label('Inpha Auto Mac Owned')
-                    ->sortable()
-                    ->searchable(),
+                    ->sortable(),
 
                 //show created date without time
                 Tables\Columns\TextColumn::make('created_at')
@@ -114,7 +116,7 @@ class ModuleResource extends Resource
                 Tables\Filters\SelectFilter::make('battery_pack_id')
                     ->relationship('batteryPack', 'name')
                     ->label('Battery Pack')
-                    ->options(fn() => \App\Models\BatteryPack::pluck('name', 'id')->toArray()),
+                    ->options(fn() => \App\Models\BatteryPack::pluck('name', 'id')->toArray())->default(fn() => \App\Models\BatteryPack::latest()->first()->id ?? null),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
