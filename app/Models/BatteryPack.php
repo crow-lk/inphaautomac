@@ -14,11 +14,17 @@ class BatteryPack extends Model
     protected $fillable = [
         'name',
         'no_of_modules',
+        'vehicle_id',
     ];
 
     public function modules()
     {
         return $this->hasMany(Module::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     //boot method to set name for new battery pack

@@ -18,6 +18,19 @@ class Module extends Model
         'battery_pack_id',
     ];
 
+    //when moduels are creating if battery_pack table vehicle_id is null, set is_inpha_auto_mac_owned to 1
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($module) {
+            $batteryPack = $module->batteryPack;
+            if (is_null($batteryPack->vehicle_id)) {
+                $module->is_inpha_auto_mac_owned = 1;
+            }
+        });
+    }
+
     public function batteryPack()
     {
         return $this->belongsTo(BatteryPack::class);

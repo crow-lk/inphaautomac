@@ -48,7 +48,10 @@ class BatteryPackResource extends Resource
                     '20' => 'Aqua/ Axio (20 Modules)',
                 ])
                 
-                ->required()
+                ->required(),
+                Forms\Components\Select::make('vehicle_id')
+                    ->relationship('vehicle', 'number')
+                    ->nullable()->searchable(),
             ]);
     }
 
@@ -57,7 +60,8 @@ class BatteryPackResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('no_of_modules')->sortable()->searchable()
+                Tables\Columns\TextColumn::make('no_of_modules')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('vehicle.number')->label('Vehicle')->sortable()->searchable(),
             ])
             ->filters([
                 //
