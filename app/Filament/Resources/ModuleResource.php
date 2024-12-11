@@ -62,13 +62,12 @@ class ModuleResource extends Resource
 
                 Tables\Columns\TextColumn::make('grade')
                     ->label('Grade')
-                    ->sortable()
                     ->getStateUsing(function ($record) {
                         $capacity = $record->capacitance;
 
                         if (is_null($capacity)) {
                             return 'N/A';
-                        } elseif ($capacity >= 4000 && $capacity <= 5000) {
+                        } elseif ($capacity >= 4000 && $capacity <= 6000) {
                             return 'A';
                         } elseif ($capacity >= 3000 && $capacity < 4000) {
                             return 'B';
@@ -92,7 +91,6 @@ class ModuleResource extends Resource
                 //4th letter of the serial number from A-Z. equal to the battery pack manufacture year A=1999, B=2000, etc
                 Tables\Columns\TextColumn::make('batteryPack.manufacture_year')
                     ->label('Manufacture Year')
-                    ->sortable()
                     ->getStateUsing(function ($record) {
                         $letter = strtoupper(substr($record->serial_number, 3, 1)); // Get the fourth letter
                         $baseYear = 1999; // Base year for 'A'

@@ -13,12 +13,15 @@ class Customer extends Model
 
     protected $fillable = [
         'name',
-        'gender',
         'phone',
         'email',
         'address', ];
 
     public function vehicles(){
         return $this->hasMany(Vehicle::class);
+    }
+
+    public function inpha_jobs(){
+        return $this->hasMany(Inpha_Job::class);
     }
 }

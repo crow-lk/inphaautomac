@@ -27,11 +27,11 @@ class VehicleResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('number')->required(),
                 Forms\Components\Select::make('brand')->options([
-                    'Toyota',
-                    'Honda',
-                    'Suzuki',
-                    'Nissan',
-                    'Mitsubishi'
+                    'Toyota' => 'Toyota',
+                    'Honda' => 'Honda',
+                    'Suzuki' => 'Suzuki',
+                    'Nissan' => 'Nissan',
+                    'Mitsubishi' => 'Mitsubishi'
                 ])->required(),
                 Forms\Components\TextInput::make('model')->required(),
                 Forms\Components\TextInput::make('milage')->required(),

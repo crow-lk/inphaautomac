@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CustomerResource\Pages;
-use App\Filament\Resources\CustomerResource\RelationManagers;
-use App\Models\Customer;
+use App\Filament\Resources\ServicesResource\Pages;
+use App\Filament\Resources\ServicesResource\RelationManagers;
+use App\Models\Service;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,22 +13,20 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CustomerResource extends Resource
+class ServicesResource extends Resource
 {
-    protected static ?string $model = Customer::class;
+    protected static ?string $model = Service::class;
 
-    protected static ?string $navigationIcon = 'heroicon-s-users';
+    protected static ?string $navigationIcon = 'heroicon-s-wrench-screwdriver';
 
-    protected static ?string $navigationGroup = 'Registrations';
+    protected static ?string $navigationGroup = 'Inpha Auto Mac Management';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')->required(),
-                Forms\Components\TextInput::make('phone')->nullable(),
-                Forms\Components\TextInput::make('email')->nullable(),
-                Forms\Components\TextInput::make('address')->nullable()
+                Forms\Components\TextInput::make('description')->nullable()
             ]);
     }
 
@@ -37,9 +35,7 @@ class CustomerResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('phone')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('email')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('address')->sortable()->searchable()
+                Tables\Columns\TextColumn::make('description')->sortable()->searchable()
             ])
             ->filters([
                 //
@@ -58,7 +54,7 @@ class CustomerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageCustomers::route('/'),
+            'index' => Pages\ManageServices::route('/'),
         ];
     }
 }
