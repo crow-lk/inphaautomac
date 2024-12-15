@@ -73,7 +73,11 @@ class IssueBatteryPacksResource extends Resource
                 Tables\Columns\TextColumn::make('vehicle.number')->sortable()->searchable()
             ])
             ->filters([
-                //
+                //packs starting with CINU are issue battery packs
+                Tables\Filters\SelectFilter::make('name')
+                    ->query(function (Builder $query) {
+                        $query->where('name', 'like', 'CINU-%');
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
