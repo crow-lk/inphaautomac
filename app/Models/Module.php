@@ -18,18 +18,43 @@ class Module extends Model
         'battery_pack_id',
     ];
 
-    //when moduels are creating if battery_pack table vehicle_id is null, set is_inpha_auto_mac_owned to 1
-    protected static function boot()
-    {
+    //when moduels are creating if battery_pack table vehicle_id is null, set is_inpha_auto_mac_owned to 1,if batterypack name starts with CINU, set not empty ir & capacitance from the latest module of the same serial number
+    protected static function boot(){
         parent::boot();
 
-        static::creating(function ($module) {
+        static::creating(function($module){
             $batteryPack = $module->batteryPack;
-            if (is_null($batteryPack->vehicle_id)) {
+            if(is_null($batteryPack->vehicle_id)){
                 $module->is_inpha_auto_mac_owned = 1;
+            }
+            if(strpos($batteryPack->name, 'CINU') === 0){
+                $latestModule = Module::where('serial_number', $module->serial_number)
+                    ->whereNotNull('ir_value')
+                    ->whereNotNull('capacitance')
+                    ->latest()
+                    ->first();
+                if($latestModule){
+                    $module->ir_value = $latestModule->ir_value;
+                    $module->capacitance = $latestModule->capacitance;
+                }
             }
         });
     }
+
+
+
+
+    // protected static function boot()
+    // {
+    //     parent::boot();
+
+    //     static::creating(function ($module) {
+    //         $batteryPack = $module->batteryPack;
+    //         if (is_null($batteryPack->vehicle_id)) {
+    //             $module->is_inpha_auto_mac_owned = 1;
+    //         }
+    //     });
+    // }
 
     public function batteryPack()
     {
