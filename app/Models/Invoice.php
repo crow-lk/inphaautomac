@@ -10,6 +10,7 @@ class Invoice extends Model
         'customer_name',
         'vehicle_number',
         'model',
+        'mileage',
         'amount',
         'invoice_date'
     ];

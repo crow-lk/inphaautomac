@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Dompdf\Dompdf;
+use App\Http\Controllers\InvoiceController;
 use Filament\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -32,6 +33,8 @@ class InvoiceResource extends Resource
                 Forms\Components\TextInput::make('vehicle_number')
                     ->required(),
                 Forms\Components\TextInput::make('model')
+                    ->required(),
+                Forms\Components\TextInput::make('mileage')
                     ->required(),
                 Forms\Components\Repeater::make('items')
                     ->relationship('invoiceItems') // Define the relationship
@@ -77,6 +80,9 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('model')
                     ->label('Model')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('mileage')
+                    ->label('Mileage')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Total Amount')
                     ->sortable()
@@ -85,12 +91,13 @@ class InvoiceResource extends Resource
                     ->label('Date Created')
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description') // Custom column for item details
-                    ->label('Items'), // Concatenate item details
+                Tables\Columns\TextColumn::make('items_count') // Custom column for item details
+                    ->label('Items')
+                    ->counts('invoiceItems'), // Concatenate item details
             ])
             ->actions([
-                Tables\Actions\Action::make('Generate PDF')
-                    ->action(fn (Invoice $record) => self::generateInvoice($record->id)),
+                Tables\Actions\Action::make('Download PDF')
+                    ->url(fn (Invoice $record) => route('invoices.pdf', $record->id))
             ]);
     }
 
@@ -103,20 +110,20 @@ class InvoiceResource extends Resource
         ];
     }
 
-    public static function generateInvoice($invoiceId)
-    {
-        $invoice = Invoice::with('invoiceItems')->findOrFail($invoiceId); // Eager load invoice items
+    // public static function generateInvoice($invoiceId)
+    // {
+    //     $invoice = Invoice::with('invoiceItems')->findOrFail($invoiceId); // Eager load invoice items
 
-        // Load the view and pass the invoice data
-        $html = view('filament\pages.invoice', compact('invoice'))->render();
+    //     // Load the view and pass the invoice data
+    //     $html = view('invoice', compact('invoice'))->render();
 
-        // Initialize Dompdf
-        $dompdf = new Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+    //     // Initialize Dompdf
+    //     $dompdf = new Dompdf();
+    //     $dompdf->loadHtml($html);
+    //     $dompdf->setPaper('A4', 'portrait');
+    //     $dompdf->render();
 
-        // Output the generated PDF to Browser
-        return $dompdf->stream("invoice_{$invoice->id}.pdf", ["Attachment" => false]); // Set Attachment to false to open in browser
-    }
+    //     // Output the generated PDF to Browser
+    //     return $dompdf->stream("invoice_{$invoice->id}.pdf"); // Set Attachment to false to open in browser
+    // }
 }

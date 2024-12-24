@@ -15,6 +15,7 @@ return new class extends Migration
         $table->id();
         $table->string('customer_name');
         $table->string('vehicle_number');
+        $table->float('mileage');
         $table->string('model');
         $table->decimal('amount', 10, 2)->default(0);
         $table->timestamps();
