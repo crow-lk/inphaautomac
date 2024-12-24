@@ -85,15 +85,11 @@ class InvoiceResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Total Amount')
-                    ->sortable()
-                    ->money('USD'), // Format as currency
+                    ->sortable(), // Format as currency
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date Created')
                     ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('items_count') // Custom column for item details
-                    ->label('Items')
-                    ->counts('invoiceItems'), // Concatenate item details
+                    ->sortable(),// Concatenate item details
             ])
             ->actions([
                 Tables\Actions\Action::make('Download PDF')

@@ -80,15 +80,15 @@
             <p><strong>Model:</strong> {{ $invoice->model }}</p>
             <p><strong>Mileage:</strong> {{ $invoice->mileage }} KM</p>
         </div>
-        
+
     </div>
     <table>
         <thead>
             <tr>
                 <th style="width:40%;">Description</th>
                 <th style="width:20%;">Quantity</th>
-                <th style="width:20%;">Price</th>
-                <th style="width:20%;">Total</th>
+                <th style="width:20%;">Price (Rs.)</th>
+                <th style="width:20%;">Total (Rs.)</th>
             </tr>
         </thead>
         <tbody>
@@ -96,12 +96,12 @@
                 <tr>
                     <td style="width:40%;">{{ $item->description }}</td>
                     <td style="width:20%;">{{ $item->quantity }}</td>
-                    <td style="width:20%;">${{ number_format($item->price, 2) }}</td>
-                    <td style="width:20%;">${{ number_format($item->quantity * $item->price, 2) }}</td>
+                    <td style="width:20%;">{{ number_format($item->price, 2) }}</td>
+                    <td style="width:20%;">{{ number_format($item->quantity * $item->price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
-    <p class="total">Total Amount:  ${{ number_format($invoice->amount, 2) }}</p>
+    <p class="total">Total Amount:  Rs.{{ number_format($invoice->amount, 2) }}</p>
 </body>
 </html>
