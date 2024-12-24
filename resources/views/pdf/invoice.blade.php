@@ -54,16 +54,20 @@
             background-color:black;
             color:white;
         }
+
+        .new{
+            display:flex;
+            justify-content: flex-end;
+        }
+
         .total {
             margin-top:20px;
-            margin-left:47%;
-            width:50%;
             padding:8px;
-            background-color:black;
-            color:white;
+            background-color:solid #ddd;
+            color:black;
             font-size: 18px;
             font-weight: bold;
-            text-align: center;
+            text-align: right;
         }
     </style>
 </head>
@@ -102,6 +106,9 @@
             @endforeach
         </tbody>
     </table>
-    <p class="total">Total Amount:  Rs.{{ number_format($invoice->amount, 2) }}</p>
+    <div class="new">
+        <p class="total">Total Amount:  Rs.{{ number_format($invoice->amount, 2) }}</p>
+    </div>
+
 </body>
 </html>
