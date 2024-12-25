@@ -24,6 +24,8 @@ class InvoiceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Invoicing';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -94,6 +96,7 @@ class InvoiceResource extends Resource
             ->actions([
                 Tables\Actions\Action::make('Download PDF')
                     ->url(fn (Invoice $record) => route('invoices.pdf', $record->id))
+                    ->label('Download PDF')
             ]);
     }
 

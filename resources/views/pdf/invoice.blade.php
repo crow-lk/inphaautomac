@@ -5,71 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice #{{ $invoice->id }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding:20px;
-            background-image: url('{{ public_path('images/BG.jpg') }}'); /* Path to your background image */
-            background-size: cover; /* Cover the entire page */
-            background-repeat: no-repeat; /* Prevent repeating the image */
-            background-position: center; /* Center the image */
-            color: #333;
-        }
-
-        .container {
-            display: flex;
-            flex-direction:row;
-            width:100%;
-            justify-content: space-between; /* Optional: space between items */
-            margin-top:140px;
-        }
-        .name {
-            font-size: 24px;
-        }
-
-        .right {
-            text-align:right;
-            margin-bottom: 20px;
-        }
-        .left {
-            margin-bottom: 20px;
-        }
-        .left p {
-            margin: 5px 0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        table, th, td {
-            border-bottom: 1px solid #ddd;
-            border-top: 1px solid #ddd;
-        }
-        th, td {
-            padding: 5px;
-            text-align: left;
-        }
-        th {
-            background-color:black;
-            color:white;
-        }
-
-        .new{
-            display:flex;
-            justify-content: flex-end;
-        }
-
-        .total {
-            margin-top:20px;
-            padding:8px;
-            background-color:solid #ddd;
-            color:black;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: right;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ public_path('css/pdf.css') }}">
 </head>
 <body>
     <div class="container">
@@ -79,7 +15,7 @@
         </div>
         <div class="left">
             <p><strong>Invoice to:</strong></p>
-            <p class="name"><strong>Customer Name:</strong> {{ $invoice->customer_name }}</p>
+            <p><strong>Customer Name:</strong> <strong>{{ $invoice->customer_name }}</strong></p>
             <p><strong>Vehicle Number:</strong> {{ $invoice->vehicle_number }}</p>
             <p><strong>Model:</strong> {{ $invoice->model }}</p>
             <p><strong>Mileage:</strong> {{ $invoice->mileage }} KM</p>

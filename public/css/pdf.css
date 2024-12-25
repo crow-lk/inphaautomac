@@ -1,0 +1,70 @@
+body {
+    font-family: 'Open Sans', sans-serif;
+    padding: 20px;
+    background-image: url('../images/BG.jpg'); /* Adjusted path */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 140px;
+}
+
+.name {
+    font-size: 24px;
+}
+
+.right {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.left {
+    margin-bottom: 20px;
+}
+
+.left p {
+    margin: 5px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table, th, td {
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+}
+
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+
+th {
+    background-color: black;
+    color: white;
+}
+
+.new {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.total {
+    margin-top: 20px;
+    padding: 8px;
+    background-color: #ddd;
+    color: black;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: right;
+}
