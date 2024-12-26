@@ -27,11 +27,11 @@
             <tr>
                 <th style="width:10%; text-align: center;">NO</th>
                 <th style="width:70%; text-align: left;">DESCRIPTION</th>
-                <th style="width:20%; text-align: center;">PRICE (Rs.)</th>
+                <th style="width:20%; text-align: right;">PRICE (Rs.)</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($invoice->invoiceItems as $item)
+            @foreach($invoice->invoiceItems as $index => $item)
                 <tr>
                     <td style="width:10%; text-align: center;">{{ $item->id }}</td>
                     <td style="width:70%; text-align: left;">{{ $item->description }}</td>
