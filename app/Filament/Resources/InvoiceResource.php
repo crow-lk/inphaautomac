@@ -38,24 +38,38 @@ class InvoiceResource extends Resource
                     ->required(),
                 Forms\Components\TextInput::make('mileage')
                     ->required(),
-                Forms\Components\TextInput::make('amount')
-                    ->required()
-                    ->numeric()->disabled()->reactive(),
                 Forms\Components\Repeater::make('items')
                     ->relationship('invoiceItems') // Define the relationship
                     ->schema([
                         Forms\Components\TextInput::make('description')
                             ->required(),
                         Forms\Components\TextInput::make('quantity')
+                            ->default(1)
+                            ->numeric()
                             ->required()
-                            ->numeric(),
+                            ->reactive()
+                            ->debounce(1000), // Reactive to trigger changes with debounce
                         Forms\Components\TextInput::make('price')
                             ->required()
-                            ->numeric(),
+                            ->numeric()
+                            ->reactive()
+                            ->debounce(1000), // Reactive to trigger changes with debounce
                     ])
-                    ->columns(3), // Adjust the number of columns
+                    ->columns(3) // Adjust the number of columns
+                    ->reactive() // Make the repeater reactive
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $total = collect($state)->sum(fn($item) => ($item['quantity'] ?? 0) * ($item['price'] ?? 0));
+                        $set('amount', $total);
+                    }),
+                Forms\Components\TextInput::make('amount')
+                    ->numeric()
+                    ->label('Total Amount')
+                    ->default(0)
+                    ->reactive()
+                     // Make the field reactive
             ]);
     }
+
 
     public static function afterCreate(Invoice $record, array $data): void
     {
