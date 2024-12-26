@@ -38,6 +38,9 @@ class InvoiceResource extends Resource
                     ->required(),
                 Forms\Components\TextInput::make('mileage')
                     ->required(),
+                Forms\Components\TextInput::make('amount')
+                    ->required()
+                    ->numeric()->disabled()->reactive(),
                 Forms\Components\Repeater::make('items')
                     ->relationship('invoiceItems') // Define the relationship
                     ->schema([
@@ -91,11 +94,11 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date Created')
                     ->dateTime()
-                    ->sortable(),// Concatenate item details
+                    ->sortable(), // Concatenate item details
             ])
             ->actions([
                 Tables\Actions\Action::make('Download PDF')
-                    ->url(fn (Invoice $record) => route('invoices.pdf', $record->id))
+                    ->url(fn(Invoice $record) => route('invoices.pdf', $record->id))
                     ->label('Download PDF')
             ]);
     }
