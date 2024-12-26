@@ -1,7 +1,7 @@
 body {
-    font-family: 'Open Sans', sans-serif;
+    font-family: "Open Sans", sans-serif;
     padding: 20px;
-    background-image: url('../images/BG.jpg'); /* Adjusted path */
+    background-image: url("../images/BG2.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -10,7 +10,6 @@ body {
 
 .container {
     display: flex;
-    flex-direction: row;
     width: 100%;
     justify-content: space-between;
     margin-top: 140px;
@@ -39,14 +38,16 @@ table {
     margin-bottom: 20px;
 }
 
-table, th, td {
+table,
+th,
+td {
     border-bottom: 1px solid #ddd;
     border-top: 1px solid #ddd;
 }
 
-th, td {
+th,
+td {
     padding: 5px;
-    text-align: left;
 }
 
 th {
@@ -67,4 +68,25 @@ th {
     font-size: 18px;
     font-weight: bold;
     text-align: right;
+}
+
+.text1 {
+    position: fixed;
+    top: 720px;
+    color: black;
+}
+
+.text2 {
+    position: fixed;
+    top: 800px;
+    color: black;
+}
+
+.h1 {
+    font-size: 22px;
+    line-height: 0.5;
+}
+
+.p1 {
+    line-height: 0.5;
 }
