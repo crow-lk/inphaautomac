@@ -11,7 +11,6 @@ body {
 .container {
     display: flex;
     width: 100%;
-    justify-content: space-between;
     margin-top: 140px;
 }
 
@@ -20,12 +19,13 @@ body {
 }
 
 .right {
+    right: 20px;
+    position: fixed;
     text-align: right;
-    margin-bottom: 20px;
 }
 
 .left {
-    margin-bottom: 20px;
+    position: fixed;
 }
 
 .left p {
@@ -35,6 +35,7 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 200px;
     margin-bottom: 20px;
 }
 

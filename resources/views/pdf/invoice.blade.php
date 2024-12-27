@@ -31,7 +31,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($invoice->invoiceItems as $index => $item)
+            @foreach($invoiceItems as $item)
                 <tr>
                     <td style="width:10%; text-align: center;">{{ $item->id }}</td>
                     <td style="width:70%; text-align: left;">{{ $item->description }}</td>
@@ -40,9 +40,9 @@
             @endforeach
         </tbody>
     </table>
-    <div class="new">
+    {{-- <div class="new">
         <p class="total">GRAND TOTAL:  Rs.{{ number_format($invoice->amount, 2) }}</p>
-    </div>
+    </div> --}}
     <div class="text1">
         <p class="h1"><strong>Inpha Auto Mac & Hybrid Care</strong></p>
         <p class="p1"><strong>Thank you for buisness with us!</strong></p>
