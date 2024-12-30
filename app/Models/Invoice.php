@@ -7,11 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Invoice extends Model
 {
     protected $fillable = [
+        'customer_id',
+        'vehicle_id',
         'customer_name',
         'vehicle_number',
         'model',
         'mileage',
         'amount',
+        'is_km',
+        'is_miles',
         'invoice_date'
     ];
 
@@ -25,5 +29,15 @@ class Invoice extends Model
         return $this->invoiceItems->sum(function ($item) {
             return $item->quantity * $item->price;
         });
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 }

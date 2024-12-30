@@ -16,6 +16,8 @@ class Vehicle extends Model
         'brand',
         'model',
         'milage',
+        'is_km',
+        'is_miles',
         'customer_id',
     ];
 
