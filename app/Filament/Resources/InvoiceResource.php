@@ -54,6 +54,26 @@ class InvoiceResource extends Resource
                             ->numeric()
                             ->reactive()
                             ->debounce(1000), // Reactive to trigger changes with debounce
+                        Forms\Components\Checkbox::make('warranty_available')
+                            ->label('Is Warranty Available?')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                // Reset warranty type when checkbox is unchecked
+                                if (!$state) {
+                                    $set('warranty_type', null);
+                                }
+                            }),
+                        Forms\Components\Select::make('warranty_type')
+                            ->label('Warranty Type')
+                            ->options([
+                                '2 months' => '2 Months',
+                                '3 months' => '3 Months',
+                                '1 year' => '1 Year',
+                                '2 years' => '2 Years',
+                            ])
+                            ->reactive()
+                            ->required(fn($get) => $get('warranty_available')) // Required if warranty is available
+                            ->disabled(fn($get) => !$get('warranty_available')), // Disable if warranty is not available
                     ])
                     ->columns(3) // Adjust the number of columns
                     ->reactive() // Make the repeater reactive

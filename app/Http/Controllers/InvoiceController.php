@@ -25,10 +25,14 @@ class InvoiceController extends Controller
             // Get the current chunk of items
             $chunk = $items->slice($currentPage * $itemsPerPage, $itemsPerPage);
 
+            // Determine if this is the last chunk
+            $isLastChunk = ($currentPage + 1) * $itemsPerPage >= $itemCount;
+
             // Generate PDF for the current chunk
             $pdfChunk = PDF::loadView('pdf.invoice', [
                 'invoice' => $invoice,
                 'invoiceItems' => $chunk, // Pass the current chunk
+                'showGrandTotal' => $isLastChunk, // Set to true if this is the last chunk
             ]);
 
             // Save the PDF to a temporary file
@@ -46,10 +50,10 @@ class InvoiceController extends Controller
             $currentPage++; // Move to the next page
         }
 
-        $pdf->SetY(185); 
-        $pdf->SetFont('Arial', 'B', 18); // Set font for grand total
-        $pdf->SetFillColor(200, 200, 200);
-        $pdf->Cell(0, 10, 'GRAND TOTAL: Rs. ' . number_format($invoice->amount, 2), 0, 1, 'C'); // Render grand total
+        // $pdf->SetY(185);
+        // $pdf->SetFont('Arial', 'B', 18); // Set font for grand total
+        // $pdf->SetFillColor(200, 200, 200);
+        // $pdf->Cell(0, 10, 'GRAND TOTAL: Rs. ' . number_format($invoice->amount, 2), 0, 1, 'C'); // Render grand total
 
 
         // Output the combined PDF
