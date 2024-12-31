@@ -50,12 +50,6 @@ class InvoiceController extends Controller
             $currentPage++; // Move to the next page
         }
 
-        // $pdf->SetY(185);
-        // $pdf->SetFont('Arial', 'B', 18); // Set font for grand total
-        // $pdf->SetFillColor(200, 200, 200);
-        // $pdf->Cell(0, 10, 'GRAND TOTAL: Rs. ' . number_format($invoice->amount, 2), 0, 1, 'C'); // Render grand total
-
-
         // Output the combined PDF
         $outputPath = public_path("invoice/invoice_{$invoice->id}.pdf");
         $pdf->Output($outputPath, 'F'); // Save the combined PDF to a file

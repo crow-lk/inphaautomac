@@ -32,14 +32,18 @@ class InvoiceResource extends Resource
     {
         return $form
             ->schema([
+
                 Forms\Components\Select::make('customer_id')
                     ->label('Customer')
                     ->relationship('customer', 'name')
                     ->required()
                     ->reactive()
+                    ->searchable()
                     ->afterStateUpdated(function ($state, callable $set) {
                         $set('vehicle_id', null); // Reset vehicle selection
                     }),
+
+
                 Forms\Components\Select::make('vehicle_id')
                     ->label('Vehicle')
                     ->options(function (callable $get) {
@@ -57,6 +61,8 @@ class InvoiceResource extends Resource
                             $set('model', null);
                         }
                     }),
+
+
                 Forms\Components\TextInput::make('model')
                     ->required(),
                 Forms\Components\Group::make([
@@ -65,7 +71,7 @@ class InvoiceResource extends Resource
                         ->required()
                         ->numeric(),
                     Forms\Components\Checkbox::make('is_km')
-                        ->label('Unit in KM')
+                        ->label('km')
                         ->default(true)
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {
@@ -74,7 +80,7 @@ class InvoiceResource extends Resource
                             }
                         }),
                     Forms\Components\Checkbox::make('is_miles')
-                        ->label('Unit in Miles')
+                        ->label('miles')
                         ->default(false)
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {
@@ -133,38 +139,10 @@ class InvoiceResource extends Resource
                     ->label('Total Amount')
                     ->default(0)
                     ->reactive()
-                     // Make the field reactive
+                // Make the field reactive
             ]);
     }
 
-
-    public static function afterCreate(Invoice $record, array $data): void
-    {
-        // Set customer_name and vehicle_number based on the selected IDs
-        $customer = Customer::find($data['customer_id']);
-        $vehicle = Vehicle::find($data['vehicle_id']);
-
-        if ($customer) {
-            $record->customer_name = $customer->name; // Set customer name
-        } else {
-            throw new \Exception("Customer not found."); // Handle the case where the customer is not found
-        }
-
-        if ($vehicle) {
-            $record->vehicle_number = $vehicle->number; // Set vehicle number
-        } else {
-            throw new \Exception("Vehicle not found."); // Handle the case where the vehicle is not found
-        }
-
-        $record->amount = $record->calculateTotalAmount(); // Calculate total amount
-        $record->save(); // Save the record
-    }
-
-    public static function afterUpdate(Invoice $record, array $data): void
-    {
-        $record->amount = $record->calculateTotalAmount();
-        $record->save();
-    }
 
     public static function table(Table $table): Table
     {
@@ -173,9 +151,7 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('Invoice ID')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('customer_name')
-                    ->label('Customer Name')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('vehicle_number')
                     ->label('Vehicle No.')
                     ->sortable(),

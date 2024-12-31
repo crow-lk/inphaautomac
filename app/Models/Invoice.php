@@ -9,7 +9,6 @@ class Invoice extends Model
     protected $fillable = [
         'customer_id',
         'vehicle_id',
-        'customer_name',
         'vehicle_number',
         'model',
         'mileage',
@@ -24,13 +23,6 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function calculateTotalAmount()
-    {
-        return $this->invoiceItems->sum(function ($item) {
-            return $item->quantity * $item->price;
-        });
-    }
-
     public function customer()
     {
         return $this->belongsTo(Customer::class);
@@ -41,3 +33,4 @@ class Invoice extends Model
         return $this->belongsTo(Vehicle::class);
     }
 }
+
