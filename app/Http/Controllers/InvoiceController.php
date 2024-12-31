@@ -9,6 +9,25 @@ use setasign\Fpdi\Fpdi;
 
 class InvoiceController extends Controller
 {
+    public function store(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'customer_name' => 'required|string',
+            'vehicle_number' => 'required|string',
+            // Add other validation rules as needed
+        ]);
+
+        // Create the invoice
+        $invoice = new Invoice();
+        $invoice->customer_name = $request->input('customer_name');
+        $invoice->vehicle_number = $request->input('vehicle_number');
+        // Set other invoice fields as needed
+        $invoice->save();
+
+        return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
+    }
+
     public function generateInvoice($invoiceId)
     {
         $invoice = Invoice::with('invoiceItems')->findOrFail($invoiceId);
@@ -66,4 +85,5 @@ class InvoiceController extends Controller
             'Content-Disposition' => 'inline; filename="invoice_' . $invoice->id . '.pdf"',
         ])->deleteFileAfterSend(true);
     }
+
 }

@@ -32,25 +32,28 @@ class InvoiceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('customer_id')
-                    ->label('Customer')
-                    ->relationship('customer', 'name')
+                Forms\Components\Select::make('customer_name')
+                    ->label('Customer Name')
+                    ->options(Customer::pluck('name', 'name')) // Assuming 'name' is unique
                     ->required()
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $set('vehicle_id', null); // Reset vehicle selection
+                        $set('vehicle_number', null); // Reset vehicle selection when customer changes
                     }),
-                Forms\Components\Select::make('vehicle_id')
-                    ->label('Vehicle')
+
+                // Vehicle Selection
+                Forms\Components\Select::make('vehicle_number')
+                    ->label('Vehicle Number')
                     ->options(function (callable $get) {
-                        $customerId = $get('customer_id');
-                        return Vehicle::where('customer_id', $customerId)->pluck('number', 'id');
+                        $customerName = $get('customer_name');
+                        return Vehicle::where('customer_name', $customerName) // Filter by customer_name
+                            ->pluck('number', 'number'); // Assuming 'number' is the field in the Vehicle model
                     })
                     ->required()
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
                         // Load vehicle details when a vehicle is selected
-                        $vehicle = Vehicle::find($state);
+                        $vehicle = Vehicle::where('number', $state)->first(); // Assuming 'number' is unique
                         if ($vehicle) {
                             $set('model', $vehicle->model); // Assuming 'model' is the field in the Vehicle model
                         } else {
@@ -140,22 +143,6 @@ class InvoiceResource extends Resource
 
     public static function afterCreate(Invoice $record, array $data): void
     {
-        // Set customer_name and vehicle_number based on the selected IDs
-        $customer = Customer::find($data['customer_id']);
-        $vehicle = Vehicle::find($data['vehicle_id']);
-
-        if ($customer) {
-            $record->customer_name = $customer->name; // Set customer name
-        } else {
-            throw new \Exception("Customer not found."); // Handle the case where the customer is not found
-        }
-
-        if ($vehicle) {
-            $record->vehicle_number = $vehicle->number; // Set vehicle number
-        } else {
-            throw new \Exception("Vehicle not found."); // Handle the case where the vehicle is not found
-        }
-
         $record->amount = $record->calculateTotalAmount(); // Calculate total amount
         $record->save(); // Save the record
     }

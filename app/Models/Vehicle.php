@@ -18,12 +18,13 @@ class Vehicle extends Model
         'milage',
         'is_km',
         'is_miles',
+        'customer_name',
         'customer_id',
     ];
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class, 'customer_name', 'name');
     }
 
     public function batteryPack()

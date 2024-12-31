@@ -10,7 +10,7 @@ class DropColumnsFromInvoicesTable extends Migration
     {
         Schema::table('invoices', function (Blueprint $table) {
             // Drop the columns you want to remove
-            $table->dropColumn(['customer_name', 'vehicle_number']); // Replace with your actual column names
+            $table->dropColumn(['customer_id', 'vehicle_id']); // Replace with your actual column names
         });
     }
 
@@ -18,8 +18,8 @@ class DropColumnsFromInvoicesTable extends Migration
     {
         Schema::table('invoices', function (Blueprint $table) {
             // Optionally, you can add the columns back in the down method
-            $table->string('customer_name'); // Replace with the original column definition
-            $table->string('vehicle_number'); // Replace with the original column definition
+            $table->string('customer_id'); // Replace with the original column definition
+            $table->string('vehicle_id'); // Replace with the original column definition
         });
     }
 }
