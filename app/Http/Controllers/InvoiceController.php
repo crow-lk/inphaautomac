@@ -9,6 +9,7 @@ use setasign\Fpdi\Fpdi;
 
 class InvoiceController extends Controller
 {
+
     public function generateInvoice($invoiceId)
     {
         $invoice = Invoice::with('invoiceItems')->findOrFail($invoiceId);

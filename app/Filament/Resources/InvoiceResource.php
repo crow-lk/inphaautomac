@@ -151,13 +151,21 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('Invoice ID')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('vehicle_number')
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->label('Customer')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('vehicle.number')
                     ->label('Vehicle No.')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('model')
                     ->label('Model')
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(function ($state, $record) {
+                        // Access the related vehicle and concatenate brand and model
+                        $vehicle = $record->vehicle; // Eager load the vehicle relationship
+                        return $vehicle ? "{$vehicle->brand} {$state}" : 'N/A'; // Return 'brand model' or 'N/A' if no vehicle
+                    }),
                 Tables\Columns\TextColumn::make('mileage')
                     ->label('Mileage')
                     ->sortable()
@@ -188,21 +196,4 @@ class InvoiceResource extends Resource
             'edit' => Pages\EditInvoice::route('/{record}/edit'),
         ];
     }
-
-    // public static function generateInvoice($invoiceId)
-    // {
-    //     $invoice = Invoice::with('invoiceItems')->findOrFail($invoiceId); // Eager load invoice items
-
-    //     // Load the view and pass the invoice data
-    //     $html = view('invoice', compact('invoice'))->render();
-
-    //     // Initialize Dompdf
-    //     $dompdf = new Dompdf();
-    //     $dompdf->loadHtml($html);
-    //     $dompdf->setPaper('A4', 'portrait');
-    //     $dompdf->render();
-
-    //     // Output the generated PDF to Browser
-    //     return $dompdf->stream("invoice_{$invoice->id}.pdf"); // Set Attachment to false to open in browser
-    // }
 }
