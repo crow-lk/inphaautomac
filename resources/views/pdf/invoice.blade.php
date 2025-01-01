@@ -31,9 +31,9 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($invoiceItems as $item)
+            @foreach($invoiceItems as $index => $item)
                 <tr>
-                    <td style="width:10%; text-align: center;">{{ $item->id }}</td>
+                    <td style="width:10%; text-align: center;">{{ $index + 1 }}</td>
                     <td style="width:70%; text-align: left;">
                         {{ $item->description }}
                         @if($item->warranty_available)
