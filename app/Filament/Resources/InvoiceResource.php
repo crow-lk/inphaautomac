@@ -154,7 +154,10 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Customer')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->formatStateUsing(function ($state, $record) {
+                        return $record->customer->title . ' ' . $state; // Assuming customer relationship is loaded
+                    }),
                 Tables\Columns\TextColumn::make('vehicle.number')
                     ->label('Vehicle No.')
                     ->sortable(),

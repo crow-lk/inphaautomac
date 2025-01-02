@@ -12,16 +12,19 @@ class Customer extends Model
     protected $table = 'customers';
 
     protected $fillable = [
+        'title',
         'name',
         'phone',
         'email',
         'address', ];
 
-    public function vehicles(){
+    public function vehicles()
+    {
         return $this->hasMany(Vehicle::class);
     }
 
-    public function inpha_jobs(){
+    public function inpha_jobs()
+    {
         return $this->hasMany(Inpha_Job::class);
     }
 }

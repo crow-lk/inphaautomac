@@ -15,7 +15,7 @@
         </div>
         <div class="left">
             <p><strong>Invoice to:</strong></p>
-            <p><strong>Customer Name:</strong> <strong>{{ $invoice->customer->name }}</strong></p>
+            <p><strong>Customer Name:</strong> <strong>{{ $invoice->customer->title }}{{ $invoice->customer->name }}</strong></p>
             <p><strong>Vehicle Number:</strong> {{ $invoice->vehicle->number }}</p>
             <p><strong>Model:</strong> {{ $invoice->vehicle->brand }} {{ $invoice->model }}</p>
             <p><strong>Mileage:</strong> {{ $invoice->mileage }} {{ $invoice->is_km ? 'KM' : 'Miles' }}</p>
