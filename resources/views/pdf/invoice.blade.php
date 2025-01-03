@@ -37,7 +37,8 @@
                     <td style="width:70%; text-align: left;">
                         {{ $item->description }}
                         @if($item->warranty_available)
-                            - {{ $item->warranty_type }} Warranty
+                            <br>
+                            <span style="font-size: 0.8em;">{{ $item->warranty_type }} Warranty</span>
                         @endif
                     </td>
                     <td style="width:20%; text-align: right;">{{ number_format($item->price, 2) }}</td>
