@@ -146,12 +146,21 @@ class InvoiceResource extends Resource
                         Forms\Components\Select::make('warranty_type')
                             ->label('Warranty Type')
                             ->options([
+<<<<<<< HEAD
                                 '1 Month' => '1 Month',
                                 '2 Months' => '2 Months',
                                 '3 Months' => '3 Months',
                                 '1 Year' => '1 Year',
                                 '2 Years' => '2 Years',
                                 '3 Years' => '3 Years',
+=======
+                                '1 month' => '1 Month',
+                                '3 months' => '3 Months',
+                                '6 months' => '6 Months',
+                                '1 year' => '1 Year',
+                                '2 years' => '2 Years',
+                                '3 years' => '3 Years',
+>>>>>>> df92a70 (6 months warrenty option added.)
                             ])
                             ->reactive()
                             ->required(fn($get) => $get('warranty_available')) // Required if warranty is available
