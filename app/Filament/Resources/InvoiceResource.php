@@ -101,7 +101,34 @@ class InvoiceResource extends Resource
                             ->numeric()
                             ->required()
                             ->reactive()
-                            ->debounce(1000), // Reactive to trigger changes with debounce
+                            ->debounce(1000)
+                            ->afterStateUpdated(function ($state, callable $set, $get) {
+                                // If the item is a service, enforce quantity to be 1
+                                if ($get('is_service')) {
+                                    $set('quantity', 1); // Reset quantity to 1
+                                }
+                            }),
+                        Forms\Components\Group::make([
+                            Forms\Components\Checkbox::make('is_service')
+                                ->label('Service')
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if ($state) {
+                                        $set('is_item', false); // Uncheck item if service is checked
+                                        $set('quantity', 1); // Set quantity to 1 if it's a service
+                                    }
+                                }),
+                            Forms\Components\Checkbox::make('is_item')
+                                ->label('Item')
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if ($state) {
+                                        $set('is_service', false); // Uncheck service if item is checked
+                                    }
+                                }),
+                        ])
+                            ->label('Mileage and Unit')
+                            ->columns(1),
                         Forms\Components\TextInput::make('price')
                             ->required()
                             ->numeric()

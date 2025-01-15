@@ -10,7 +10,7 @@ class InvoiceItem extends Model
     use HasFactory;
 
     protected $fillable = ['invoice_id', 'description', 'quantity', 'warranty_available',
-        'warranty_type', 'price'];
+        'warranty_type', 'price', 'is_service', 'is_item'];
 
     public function invoice()
     {

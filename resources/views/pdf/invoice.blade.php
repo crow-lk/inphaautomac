@@ -26,22 +26,30 @@
         <thead>
             <tr>
                 <th style="width:10%; text-align: center;">NO</th>
-                <th style="width:70%; text-align: left;">DESCRIPTION</th>
+                <th style="width:40%; text-align: left;">DESCRIPTION</th>
+                <th style="width:10%; text-align: center;">QTY</th>
                 <th style="width:20%; text-align: right;">PRICE (Rs.)</th>
+                <th style="width:20%; text-align: right;">TOTAL (Rs.)</th>
             </tr>
         </thead>
         <tbody>
             @foreach($invoiceItems as $index => $item)
                 <tr>
                     <td style="width:10%; text-align: center;">{{ $index + 1 }}</td>
-                    <td style="width:70%; text-align: left;">
+                    <td style="width:40%; text-align: left;">
                         {{ $item->description }}
                         @if($item->warranty_available)
                             <br>
-                            <span style="font-size: 0.8em;">{{ $item->warranty_type }} Warranty</span>
+                            <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
+                        @endif
+                    </td>
+                    <td style="width:10%; text-align: center;">
+                        @if($item->is_item)
+                            {{ $item->quantity }}
                         @endif
                     </td>
                     <td style="width:20%; text-align: right;">{{ number_format($item->price, 2) }}</td>
+                    <td style="width:20%; text-align: right;">{{ number_format($item->quantity*$item->price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
