@@ -146,7 +146,7 @@ class InvoiceResource extends Resource
                         Forms\Components\Select::make('warranty_type')
                             ->label('Warranty Type')
                             ->options([
-                                '1_month' => '1 Month',
+                                '1 month' => '1 Month',
                                 '3 months' => '3 Months',
                                 '6 months' => '6 Months',
                                 '1 year' => '1 Year',
