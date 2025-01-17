@@ -133,7 +133,8 @@ class InvoiceResource extends Resource
                             ->required()
                             ->numeric()
                             ->reactive()
-                            ->debounce(1000), // Reactive to trigger changes with debounce
+                            ->debounce(1000)
+                            ->label('Unit Price'), // Reactive to trigger changes with debounce
                         Forms\Components\Checkbox::make('warranty_available')
                             ->label('Is Warranty Available?')
                             ->reactive()

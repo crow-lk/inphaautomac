@@ -25,11 +25,11 @@
     <table>
         <thead>
             <tr>
-                <th style="width:10%; text-align: center;">NO</th>
-                <th style="width:40%; text-align: left;">DESCRIPTION</th>
-                <th style="width:20%; text-align: right;">PRICE (Rs.)</th>
-                <th style="width:10%; text-align: center;">QTY</th>
-                <th style="width:20%; text-align: right;">TOTAL (Rs.)</th>
+                <th style="width:10%; text-align: center;">No</th>
+                <th style="width:40%; text-align: left;">Description</th>
+                <th style="width:20%; text-align: right;">Unit Price(LKR)</th>
+                <th style="width:10%; text-align: center;">Qty</th>
+                <th style="width:20%; text-align: right;">Total(LKR)</th>
             </tr>
         </thead>
         <tbody>
