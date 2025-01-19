@@ -41,8 +41,8 @@ class InvoiceResource extends Resource
                     ->searchable()
                     ->afterStateUpdated(function ($state, callable $set) {
                         $set('vehicle_id', null); // Reset vehicle selection
-                    }),
-
+                    })
+                    ->columnSpan('full'), // Make it span the full width of the row
 
                 Forms\Components\Select::make('vehicle_id')
                     ->label('Vehicle')
@@ -60,42 +60,68 @@ class InvoiceResource extends Resource
                         } else {
                             $set('model', null);
                         }
-                    }),
-
+                    })
+                    ->columnSpan('full'), // Make it span the full width of the row
 
                 Forms\Components\TextInput::make('model')
-                    ->required(),
+                    ->required()->columnSpanFull(),
                 Forms\Components\Group::make([
                     Forms\Components\TextInput::make('mileage')
                         ->label('Mileage')
                         ->required()
-                        ->numeric(),
-                    Forms\Components\Checkbox::make('is_km')
-                        ->label('km')
-                        ->default(true)
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set) {
-                            if ($state) {
-                                $set('is_miles', false); // Uncheck miles if km is checked
-                            }
-                        }),
-                    Forms\Components\Checkbox::make('is_miles')
-                        ->label('miles')
-                        ->default(false)
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set) {
-                            if ($state) {
-                                $set('is_km', false); // Uncheck km if miles is checked
-                            }
-                        }),
-                ])
-                    ->label('Mileage and Unit')
-                    ->columns(3), // Adjust the number of columns as needed
+                        ->numeric()->columnSpanFull(),
+                    Forms\Components\Group::make([
+                        Forms\Components\Checkbox::make('is_km')
+                            ->label('km')
+                            ->default(true)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $set('is_miles', false); // Uncheck miles if km is checked
+                                }
+                            }),
+                        Forms\Components\Checkbox::make('is_miles')
+                            ->label('miles')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $set('is_km', false); // Uncheck km if miles is checked
+                                }
+                            }),
+                    ])->columns(2),
+                ])->columnSpanFull(),
+
+
+
+
                 Forms\Components\Repeater::make('items')
                     ->relationship('invoiceItems') // Define the relationship
                     ->schema([
-                        Forms\Components\TextInput::make('description')
-                            ->required(),
+                        Forms\Components\Group::make([
+
+                            Forms\Components\Group::make([
+                                Forms\Components\Checkbox::make('is_service')
+                                    ->label('Service')
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state) {
+                                            $set('is_item', false); // Uncheck item if service is checked
+                                            $set('quantity', 1); // Set quantity to 1 if it's a service
+                                        }
+                                    }),
+                                Forms\Components\Checkbox::make('is_item')
+                                    ->label('Item')
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state) {
+                                            $set('is_service', false); // Uncheck service if item is checked
+                                        }
+                                    }),
+                            ])->columns(2),
+                            Forms\Components\TextInput::make('description')
+                                ->required(),
+                        ])->columnSpanFull(),
                         Forms\Components\TextInput::make('quantity')
                             ->default(1)
                             ->numeric()
@@ -108,32 +134,11 @@ class InvoiceResource extends Resource
                                     $set('quantity', 1); // Reset quantity to 1
                                 }
                             }),
-                        Forms\Components\Group::make([
-                            Forms\Components\Checkbox::make('is_service')
-                                ->label('Service')
-                                ->reactive()
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    if ($state) {
-                                        $set('is_item', false); // Uncheck item if service is checked
-                                        $set('quantity', 1); // Set quantity to 1 if it's a service
-                                    }
-                                }),
-                            Forms\Components\Checkbox::make('is_item')
-                                ->label('Item')
-                                ->reactive()
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    if ($state) {
-                                        $set('is_service', false); // Uncheck service if item is checked
-                                    }
-                                }),
-                        ])
-                            ->label('Mileage and Unit')
-                            ->columns(1),
                         Forms\Components\TextInput::make('price')
                             ->required()
                             ->numeric()
                             ->reactive()
-                            ->debounce(1000)
+                            ->debounce(2000)
                             ->label('Unit Price'), // Reactive to trigger changes with debounce
                         Forms\Components\Checkbox::make('warranty_available')
                             ->label('Is Warranty Available?')
@@ -158,17 +163,52 @@ class InvoiceResource extends Resource
                             ->required(fn($get) => $get('warranty_available')) // Required if warranty is available
                             ->disabled(fn($get) => !$get('warranty_available')), // Disable if warranty is not available
                     ])
-                    ->columns(3) // Adjust the number of columns
                     ->reactive() // Make the repeater reactive
                     ->afterStateUpdated(function ($state, callable $set) {
                         $total = collect($state)->sum(fn($item) => ($item['quantity'] ?? 0) * ($item['price'] ?? 0));
                         $set('amount', $total);
-                    }),
+                    })->columnSpanFull(),
+
+
+
                 Forms\Components\TextInput::make('amount')
                     ->numeric()
                     ->label('Total Amount')
                     ->default(0)
                     ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        $amount = (float)($get('amount') ?? 0); // Cast to float for safety
+                        $paidAmount = (float)($get('paid_amount') ?? 0); // Cast to float for safety
+                        $balance = $paidAmount - $amount; // Calculate the balance
+                        $set('balance', $balance);
+                    }),
+
+                Forms\Components\TextInput::make('paid_amount')
+                    ->numeric()
+                    ->label('Paid Amount')
+                    ->default(0)
+                    ->reactive()
+                    ->debounce(2000)
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        $amount = (float)($get('amount') ?? 0); // Cast to float for safety
+                        $paidAmount = (float)($get('paid_amount') ?? 0); // Cast to float for safety
+                        $balance = $paidAmount - $amount; // Calculate the balance
+                        $set('balance', $balance);
+                    }),
+
+                Forms\Components\TextInput::make('balance')
+                    ->numeric()
+                    ->label('Balance (+/-)')
+                    ->default(0)
+                    ->readOnly()
+                    ->reactive()
+
+
+
+
+
+
+
                 // Make the field reactive
             ]);
     }
