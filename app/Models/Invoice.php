@@ -15,6 +15,8 @@ class Invoice extends Model
         'amount',
         'is_km',
         'is_miles',
+        'is_invoice',
+        'is_quatation',
         'invoice_date'
     ];
 

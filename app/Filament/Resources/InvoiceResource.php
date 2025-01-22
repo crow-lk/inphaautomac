@@ -32,6 +32,26 @@ class InvoiceResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Group::make([
+                    Forms\Components\Checkbox::make('is_invoice')
+                        ->label('Invoice')
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            if ($state) {
+                                $set('is_quatation', false);
+                            }
+                        }),
+                    Forms\Components\Checkbox::make('is_quatation')
+                        ->label('Quatation')
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            if ($state) {
+                                $set('is_invoice', false); // Uncheck service if item is checked
+                            }
+                        }),
+                ])
+                    ->label('Invoice Type')
+                    ->columns(2),
 
                 Forms\Components\Select::make('customer_id')
                     ->label('Customer')
@@ -220,7 +240,11 @@ class InvoiceResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Invoice ID')
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(function ($state, $record) {
+                        // Assuming 'is_km' is a boolean field in the Invoice model
+                        return $state . ' - ' . ($record->is_invoice ? 'Invoice' : 'Quatation');
+                    }),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Customer')
                     ->sortable()
