@@ -123,14 +123,21 @@ class ModuleResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-
-                    //bulk action to export selected modules
-                    BulkAction::make('exoport')->label('Export to Excel')->icon('heroicon-o-document')->action(function (SupportCollection $records) {
-                        return Excel::download(new \App\Exports\ModulesExport($records), 'modules.xlsx');
-                    })
-
+            
+                    // Bulk action to export selected modules
+                    BulkAction::make('export')
+                        ->label('Export to Excel')
+                        ->icon('heroicon-o-document')
+                        ->action(function (SupportCollection $records) {
+                            // Explicitly fetch records with necessary attributes and relations
+                            $modules = Module::query()
+                                ->whereIn('id', $records->pluck('id'))
+                                ->get(['id', 'serial_number', 'ir_value', 'capacitance']); // Adjust the fields as necessary
+            
+                            return Excel::download(new \App\Exports\ModulesExport($modules), 'modules.xlsx');
+                        })
                 ]),
-            ]);
+            ]);            
     }
 
     public static function getPages(): array
