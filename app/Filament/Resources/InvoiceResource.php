@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Filamemt\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget\TodayInvIncomeWidget;
 use App\Filament\Resources\InvoiceItemRelationManagerResource\RelationManagers\InvoiceItemsRelationManager;
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Filament\Resources\RelationManagers;
-use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Dompdf\Dompdf;
 use App\Http\Controllers\InvoiceController;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Vehicle;
 use Filament\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +28,7 @@ class InvoiceResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Invoicing';
+
 
     public static function form(Form $form): Form
     {
@@ -291,6 +293,13 @@ class InvoiceResource extends Resource
             'index' => Pages\ListInvoices::route('/'),
             'create' => Pages\CreateInvoice::route('/create'),
             'edit' => Pages\EditInvoice::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getHeaderWidgets(): array
+    {
+        return [
+            TodayInvIncomeWidget::class, // Add your widget here
         ];
     }
 }

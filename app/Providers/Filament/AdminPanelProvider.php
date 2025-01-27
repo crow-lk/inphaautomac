@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filamemt\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget\TodayInvIncomeWidget;
 use App\Filament\Resources\BatteryPackResource\Widgets\BatteryPacksOverview;
 use App\Filament\Resources\ModuleResource\Widgets\ModulesOverview;
 use App\Models\BatteryPack;
@@ -43,10 +44,12 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 // Widgets\FilamentInfoWidget::class,
+                TodayInvIncomeWidget::class,
                 BatteryPacksOverview::class,
                 ModulesOverview::class,
+
             ])
-            
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
