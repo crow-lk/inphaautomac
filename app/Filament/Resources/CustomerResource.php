@@ -34,6 +34,7 @@ class CustomerResource extends Resource
                         'Ms.' => 'Ms. (woman, regardless of marital status)',
                         'Dr.' => 'Dr. (Doctor)',
                         'Prof.' => 'Prof. (Professor)',
+                        'Company' => 'Company',
                     ])
                     ->nullable(),
                 Forms\Components\TextInput::make('name')->required(),
