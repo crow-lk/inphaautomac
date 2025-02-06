@@ -13,6 +13,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Auth;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -33,6 +34,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandLogo(asset('images/logo1.png'))
+            ->darkModeBrandLogo(asset('images/logo3.png'))
+            ->brandLogoHeight(fn() => Auth::check() ? '60px' : '90px')
+            ->favicon(asset('images/logof.png'))
             ->colors([
                 'primary' => Color::Amber,
             ])
