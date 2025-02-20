@@ -18,7 +18,7 @@ class InvoiceController extends Controller
         // Create a new FPDI instance
         $pdf = new Fpdi();
         $itemCount = $items->count();
-        $itemsPerPage = 6; // Number of items per PDF
+        $itemsPerPage = 15; // Number of items per PDF
         $currentPage = 0;
 
         // Loop until all items are processed

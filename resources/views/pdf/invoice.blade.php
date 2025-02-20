@@ -47,21 +47,21 @@
         <tbody>
             @foreach($invoiceItems as $index => $item)
                 <tr>
-                    <td style="width:10%; text-align: center;">{{ $index + 1 }}</td>
-                    <td style="width:40%; text-align: left;">
+                    <td style="width:10%; text-align: center; font-size: 11px;">{{ $index + 1 }}</td>
+                    <td style="width:40%; text-align: left; font-size: 11px">
                         {{ $item->description }}
                         @if($item->warranty_available)
                             <br>
                             <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
                         @endif
                     </td>
-                    <td style="width:20%; text-align: right;">{{ number_format($item->price, 2) }}</td>
-                    <td style="width:10%; text-align: center;">
+                    <td style="width:20%; text-align: right; font-size: 11px;">{{ number_format($item->price, 2) }}</td>
+                    <td style="width:10%; text-align: center; font-size: 11px;">
                         @if($item->is_item)
                             {{ $item->quantity }}
                         @endif
                     </td>
-                    <td style="width:20%; text-align: right;">{{ number_format($item->quantity*$item->price, 2) }}</td>
+                    <td style="width:20%; text-align: right; font-size: 11px">{{ number_format($item->quantity*$item->price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -74,7 +74,7 @@
         <p class="p1"><strong>Thank you for buisness with us!</strong></p>
     </div>
     <div class="text2">
-        <p><strong>Term and Conditions :</strong></p>
+        <p class="h1"><strong>Term and Conditions :</strong></p>
         <p class="p1">It is mandatory to bring the invoice given to you</p>
         <p class="p1">for any Battery, ABS related services.</p>
         <p class="p1">Physical damages are not covered under warranty.</p>
