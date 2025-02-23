@@ -60,4 +60,10 @@ class Module extends Model
     {
         return $this->belongsTo(BatteryPack::class);
     }
+
+    public function setIrValueAttribute($value)
+    {
+        // Convert mΩ to Ω
+        $this->attributes['ir_value'] = $value / 1000; // Convert from milliohms to ohms
+    }
 }
