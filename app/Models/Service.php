@@ -20,4 +20,9 @@ class Service extends Model
     {
         return $this->belongsToMany(Inpha_Job::class);
     }
+
+    public function invoiceItems()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
 }

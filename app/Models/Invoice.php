@@ -17,8 +17,12 @@ class Invoice extends Model
         'is_miles',
         'is_invoice',
         'is_quatation',
+        'credit_balance',
+        'payment_status',
         'invoice_date'
     ];
+
+
 
     public function invoiceItems()
     {
@@ -33,6 +37,11 @@ class Invoice extends Model
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 }
 
