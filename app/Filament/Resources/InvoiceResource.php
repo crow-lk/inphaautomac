@@ -319,7 +319,11 @@ class InvoiceResource extends Resource
                     ->sortable(), // Concatenate item details
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('Download PDF')
+                    ->url(fn(Invoice $record) => route('invoices.pdf', $record->id))
+                    ->icon('heroicon-o-printer')
+                    ->label('')
             ]);
     }
 

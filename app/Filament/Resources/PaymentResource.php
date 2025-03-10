@@ -48,9 +48,16 @@ class PaymentResource extends Resource
 
                                     // Get the current date in the desired format (e.g., Ymd for YYYYMMDD)
                                     $currentDate = now()->format('Ymd'); // Format: YYYYMMDD
+                                     // Get the current date in the desired format (e.g., Ymd for YYYYMMDD)
+                                    $currentDate = now()->format('Ymd'); // Format: YYYYMMDD
 
+                                    // Retrieve the last payment ID
+                                    $lastPayment = Payment::orderBy('id', 'desc')->first();
+                                    $lastPaymentId = $lastPayment ? $lastPayment->id : 0; // Get the last payment ID or 0 if none
+
+                                    $newPaymentId = $lastPaymentId + 1; // Increment the last payment ID
                                     // Generate the reference number
-                                    $referenceNumber = 'IAM' . $currentDate . $invoice->id; // Concatenate JME, current date, and invoice ID
+                                    $referenceNumber = 'IAM' . $currentDate . $invoice->id . $newPaymentId; // Concatenate JME, current date, and invoice ID
                                     $set('reference_number', $referenceNumber); // Set the reference number
                                 } else {
                                     $set('amount', null);
