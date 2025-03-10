@@ -131,10 +131,13 @@ class PaymentResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('reference_number')->label('Reference Number')->sortable(),
                 TextColumn::make('invoice_id')->label('Invoice')->sortable(),
                 TextColumn::make('invoice.amount')->label('Total')->sortable(),
                 TextColumn::make('amount_paid')->label('Amount Paid')->sortable(),
                 TextColumn::make('discount')->label('Discount')->sortable(),
+                //payment method
+                TextColumn::make('payment_method')->label('Payment Method')->sortable(),
                 TextColumn::make('payment_date')->label('Payment Date')->sortable(),
             ])
             ->filters([])
