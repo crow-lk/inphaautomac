@@ -14,11 +14,15 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with('invoiceItems')->findOrFail($invoiceId);
         $items = $invoice->invoiceItems;
+        $payments = $invoice->payments; // Get the payments associated with the invoice
+
+        // Calculate the total paid amount
+        $totalPaid = $invoice->payments->sum('amount_paid');
 
         // Create a new FPDI instance
         $pdf = new Fpdi();
         $itemCount = $items->count();
-        $itemsPerPage = 15; // Number of items per PDF
+        $itemsPerPage = 12; // Number of items per PDF
         $currentPage = 0;
 
         // Loop until all items are processed
@@ -33,6 +37,8 @@ class InvoiceController extends Controller
             $pdfChunk = PDF::loadView('pdf.invoice', [
                 'invoice' => $invoice,
                 'invoiceItems' => $chunk, // Pass the current chunk
+                'totalPaid' => $totalPaid,
+                'payments' => $payments,
                 'showGrandTotal' => $isLastChunk, // Set to true if this is the last chunk
             ]);
 

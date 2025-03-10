@@ -74,11 +74,10 @@ th {
 }
 
 .total {
-    margin-top: 20px;
     padding: 8px;
     background-color: #ddd;
     color: black;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     text-align: right;
 }

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filamemt\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget\TodayInvIncomeWidget;
 use App\Filament\Resources\InvoiceItemRelationManagerResource\RelationManagers\InvoiceItemsRelationManager;
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Filament\Resources\RelationManagers;
+use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,7 +15,6 @@ use Filament\Tables\Table;
 use Dompdf\Dompdf;
 use App\Http\Controllers\InvoiceController;
 use App\Models\Customer;
-use App\Models\Invoice;
 use App\Models\Vehicle;
 use Filament\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,10 +24,9 @@ class InvoiceResource extends Resource
 {
     protected static ?string $model = Invoice::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $navigationGroup = 'Invoicing';
-
 
     public static function form(Form $form): Form
     {
@@ -141,15 +139,70 @@ class InvoiceResource extends Resource
                                         }
                                     }),
                             ])->columns(2),
-                            Forms\Components\TextInput::make('description')
-                                ->required(),
+                            Forms\Components\Select::make('service_id')
+                                ->label('Service')
+                                ->options(function () {
+                                    return \App\Models\Service::pluck('name', 'id'); // Load services
+                                })
+                                ->reactive()
+                                ->required()
+                                ->searchable()
+                                ->createOptionForm(function () {
+                                    return [
+                                        Forms\Components\TextInput::make('name')->label('Service Name')->required(),
+                                        Forms\Components\TextInput::make('description')->label('Description'),
+                                    ];
+                                })
+                                ->createOptionUsing(function (array $data) {
+                                    $service = \App\Models\Service::create([
+                                        'name' => $data['name'],
+                                        'description' => $data['description'] ?? null,
+                                    ]);
+                                    return $service->id; // Return the service ID
+                                })
+                                ->hidden(fn($get) => !$get('is_service')),
+
+                            Forms\Components\Select::make('item_id')
+                                ->label('Item')
+                                ->options(function () {
+                                    return \App\Models\Item::pluck('name', 'id'); // Load items
+                                })
+                                ->reactive()
+                                ->searchable()
+                                ->createOptionForm(function () {
+                                    return [
+                                        Forms\Components\TextInput::make('name')->label('Item Name')->required(),
+                                        Forms\Components\Select::make('unit')->options([
+                                            'l' => 'Liters',
+                                            'ml' => 'Milliliters',
+                                            'pcs' => 'Pieces',
+                                            'pair' => 'Pair',
+                                        ])->required(),
+                                        Forms\Components\TextInput::make('qty')->label('Quantity')->numeric()->required(),
+                                        Forms\Components\TextInput::make('comment')->label('Comment'),
+                                    ];
+                                })
+                                ->createOptionUsing(function (array $data) {
+                                    $item = \App\Models\Item::create([
+                                        'name' => $data['name'],
+                                        'unit' => $data['unit'],
+                                        'qty' => $data['qty'],
+                                        'comment' => $data['comment'] ?? null,
+                                    ]);
+                                    return $item->id; // Return the item ID
+                                })
+                            ->required()
+                            ->hidden(fn($get) => !$get('is_item')),
+
                         ])->columnSpanFull(),
+
                         Forms\Components\TextInput::make('quantity')
                             ->default(1)
                             ->numeric()
                             ->required()
                             ->reactive()
                             ->debounce(1000)
+                            ->disabled(fn ($get) => $get('is_service'))
                             ->afterStateUpdated(function ($state, callable $set, $get) {
                                 // If the item is a service, enforce quantity to be 1
                                 if ($get('is_service')) {
@@ -187,9 +240,12 @@ class InvoiceResource extends Resource
                     ])
                     ->reactive() // Make the repeater reactive
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $total = collect($state)->sum(fn($item) => ($item['quantity'] ?? 0) * ($item['price'] ?? 0));
+                        $total = collect($state)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
+
                         $set('amount', $total);
-                    })->columnSpanFull(),
+                        $set('credit_balance', $total);
+                    })->columnSpanFull()->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['description'] ?? null),
 
 
 
@@ -197,41 +253,14 @@ class InvoiceResource extends Resource
                     ->numeric()
                     ->label('Total Amount')
                     ->default(0)
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, $get) {
-                        $amount = (float)($get('amount') ?? 0); // Cast to float for safety
-                        $paidAmount = (float)($get('paid_amount') ?? 0); // Cast to float for safety
-                        $balance = $paidAmount - $amount; // Calculate the balance
-                        $set('balance', $balance);
-                    }),
+                    ->reactive(),
 
-                Forms\Components\TextInput::make('paid_amount')
+                Forms\Components\TextInput::make('credit_balance')
                     ->numeric()
-                    ->label('Paid Amount')
+                    ->label('To Pay')
                     ->default(0)
                     ->reactive()
-                    ->debounce(2000)
-                    ->afterStateUpdated(function ($state, callable $set, $get) {
-                        $amount = (float)($get('amount') ?? 0); // Cast to float for safety
-                        $paidAmount = (float)($get('paid_amount') ?? 0); // Cast to float for safety
-                        $balance = $paidAmount - $amount; // Calculate the balance
-                        $set('balance', $balance);
-                    }),
 
-                Forms\Components\TextInput::make('balance')
-                    ->numeric()
-                    ->label('Balance (+/-)')
-                    ->default(0)
-                    ->readOnly()
-                    ->reactive()
-
-
-
-
-
-
-
-                // Make the field reactive
             ]);
     }
 
@@ -275,31 +304,29 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Total Amount')
                     ->sortable(), // Format as currency
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Partial Paid' => 'warning',
+                        'Paid' => 'success',
+                        'Unpaid' => 'danger',
+                    })
+                    ->sortable(), // Format as currency
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date Created')
                     ->dateTime()
                     ->sortable(), // Concatenate item details
             ])
             ->actions([
-                Tables\Actions\Action::make('Download PDF')
-                    ->url(fn(Invoice $record) => route('invoices.pdf', $record->id))
-                    ->label('Download PDF')
+                Tables\Actions\EditAction::make()
             ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInvoices::route('/'),
-            'create' => Pages\CreateInvoice::route('/create'),
-            'edit' => Pages\EditInvoice::route('/{record}/edit'),
-        ];
-    }
-
-    public static function getHeaderWidgets(): array
-    {
-        return [
-            TodayInvIncomeWidget::class, // Add your widget here
+            'index' => Pages\ManageInvoices::route('/'),
         ];
     }
 }
