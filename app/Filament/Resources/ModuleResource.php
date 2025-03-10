@@ -49,7 +49,7 @@ class ModuleResource extends Resource
                 Tables\Columns\TextInputColumn::make('ir_value')
                     ->sortable()
                     ->searchable()
-                    ->label('IR Value (mΩ)')->alignEnd()->type('number')->rules(['regex:/^\d{1,3}$/']),
+                    ->label('IR Value (Ω)')->alignEnd()->type('number')->rules(['regex:/^\d{1,3}$/']),
 
                 Tables\Columns\TextInputColumn::make('capacitance')
                     ->sortable()
@@ -123,7 +123,7 @@ class ModuleResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-            
+
                     // Bulk action to export selected modules
                     BulkAction::make('export')
                         ->label('Export to Excel')
@@ -133,11 +133,11 @@ class ModuleResource extends Resource
                             $modules = Module::query()
                                 ->whereIn('id', $records->pluck('id'))
                                 ->get(['id', 'serial_number', 'ir_value', 'capacitance']); // Adjust the fields as necessary
-            
+
                             return Excel::download(new \App\Exports\ModulesExport($modules), 'modules.xlsx');
                         })
                 ]),
-            ]);            
+            ]);
     }
 
     public static function getPages(): array
