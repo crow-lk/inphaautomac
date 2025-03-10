@@ -16,6 +16,7 @@ class Module extends Model
         'ir_value',
         'capacitance',
         'battery_pack_id',
+        'sort',
     ];
 
     //when moduels are creating if battery_pack table vehicle_id is null, set is_inpha_auto_mac_owned to 1,if batterypack name starts with CINU, set not empty ir & capacitance from the latest module of the same serial number
