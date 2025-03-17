@@ -47,10 +47,9 @@ class Invoice extends Model
     protected static function booted()
     {
         static::saved(function ($invoice) {
-
-            if ($invoice) {
-                $amount = $invoice->amount; // Use the amount paid for the message
-                $payments = Payment::find($invoice->id);
+            // Check if the invoice is newly created and has no payments
+            if ($invoice->wasRecentlyCreated && $invoice->payments()->count() === 0) {
+                $amount = $invoice->amount; // Use the amount for the message
                 // Ensure the customer relationship is loaded
                 $customer = $invoice->customer;
 
