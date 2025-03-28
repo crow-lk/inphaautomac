@@ -25,11 +25,17 @@ class ManageModules extends ManageRecords
                     return [
                         \Filament\Forms\Components\FileUpload::make('file')
                             ->label('CSV File'),
+                        \Filament\Forms\Components\Select::make('module_type')
+                            ->label('Module Type')
+                            ->options([
+                                'NU' => 'NU',
+                                'CINU' => 'CINU',
+                            ])
+                            ->required(),
                     ];
-                })->action(function (array $data){
-                    // dd($data);
-                    $file = public_path('storage/'.$data['file']);
-                    Excel::import(new \App\Imports\ModulesImport, $file);
+                })->action(function (array $data) {
+                    $file = public_path('storage/' . $data['file']);
+                    Excel::import(new \App\Imports\ModulesImport($data['module_type']), $file);
                 }),
         ];
     }

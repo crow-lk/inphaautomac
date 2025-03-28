@@ -24,6 +24,10 @@ class Module extends Model
         parent::boot();
 
         static::creating(function($module){
+            if (isset($module->ir_value)) {
+                $module->ir_value = $module->ir_value / 1000;
+            }
+
             $batteryPack = $module->batteryPack;
             if(is_null($batteryPack->vehicle_id)){
                 $module->is_inpha_auto_mac_owned = 1;
@@ -62,9 +66,9 @@ class Module extends Model
         return $this->belongsTo(BatteryPack::class);
     }
 
-    public function setIrValueAttribute($value)
-    {
-        // Convert mΩ to Ω
-        $this->attributes['ir_value'] = $value / 1000; // Convert from milliohms to ohms
-    }
+    // public function setIrValueAttribute($value)
+    // {
+    //     // Convert mΩ to Ω
+    //     $this->attributes['ir_value'] = $value / 1000; // Convert from milliohms to ohms
+    // }
 }
