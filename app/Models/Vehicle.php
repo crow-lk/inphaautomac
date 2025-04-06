@@ -31,8 +31,8 @@ class Vehicle extends Model
         return $this->hasOne(BatteryPack::class);
     }
 
-    public function inpha_jobs()
-    {
-        return $this->hasMany(Inpha_Job::class);
-    }
+    // public function inpha_jobs()
+    // {
+    //     return $this->hasMany(Inpha_Job::class);
+    // }
 }

@@ -16,10 +16,10 @@ class Service extends Model
         'description',
     ];
 
-    public function inpha_jobs()
-    {
-        return $this->belongsToMany(Inpha_Job::class);
-    }
+    // public function inpha_jobs()
+    // {
+    //     return $this->belongsToMany(Inpha_Job::class);
+    // }
 
     public function invoiceItems()
     {

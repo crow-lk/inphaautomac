@@ -23,8 +23,8 @@ class Customer extends Model
         return $this->hasMany(Vehicle::class);
     }
 
-    public function inpha_jobs()
-    {
-        return $this->hasMany(Inpha_Job::class);
-    }
+    // public function inpha_jobs()
+    // {
+    //     return $this->hasMany(Inpha_Job::class);
+    // }
 }
