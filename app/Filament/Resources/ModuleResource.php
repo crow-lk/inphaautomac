@@ -31,9 +31,15 @@ class ModuleResource extends Resource
 
     public static function form(Form $form): Form
     {
+        // Fetch existing serial numbers from the database
+        $serialNumbers = Module::pluck('serial_number')->toArray(); // Replace YourModel with the actual model name
+
         return $form
             ->schema([
-                Forms\Components\TextInput::make('serial_number')->required(),
+                Forms\Components\TextInput::make('serial_number')
+                    ->required()
+                    ->autocomplete('off')
+                    ->datalist($serialNumbers), // Pass the fetched serial numbers here
                 Forms\Components\TextInput::make('ir_value')->required()->nullable()->numeric(),
                 Forms\Components\TextInput::make('capacitance')->required()->nullable()->numeric(),
                 Forms\Components\Select::make('battery_pack_id')->relationship('batteryPack', 'name')->required()->searchable(),
