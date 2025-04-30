@@ -23,11 +23,13 @@ class ModulesOverview extends BaseWidget
             ->groupBy('m1.serial_number');
 
         return [
-            Stat::make('Total Modules', Module::whereIn('id', $latestValidModuleIds)->count()),
+            Stat::make('Total Modules', Module::whereIn('id', $latestValidModuleIds)->count())
+                ->url(route('filament.admin.resources.modules.all')),
 
             Stat::make('Grade A Modules', Module::whereBetween('capacitance', [4000, 6000])
                 ->whereIn('id', $latestValidModuleIds)
                 ->count())
+                ->url(route('filament.admin.resources.modules.grade-a'))
                 ->description("Capacity between 4000-6000mAh")
                 ->descriptionIcon('heroicon-s-battery-100')
                 ->color('success'),
@@ -35,6 +37,7 @@ class ModulesOverview extends BaseWidget
             Stat::make('Grade B Modules', Module::whereBetween('capacitance', [3000, 4000])
                 ->whereIn('id', $latestValidModuleIds)
                 ->count())
+                ->url(route('filament.admin.resources.modules.grade-b'))
                 ->description("Capacity between 3000-4000mAh")
                 ->descriptionIcon('heroicon-s-battery-50')
                 ->color('primary'),
@@ -42,6 +45,7 @@ class ModulesOverview extends BaseWidget
             Stat::make('Grade C Modules', Module::whereBetween('capacitance', [2000, 3000])
                 ->whereIn('id', $latestValidModuleIds)
                 ->count())
+                ->url(route('filament.admin.resources.modules.grade-c'))
                 ->description("Capacity between 2000-3000mAh")
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('info'),
@@ -49,6 +53,7 @@ class ModulesOverview extends BaseWidget
             Stat::make('Grade D Modules', Module::whereBetween('capacitance', [1000, 2000])
                 ->whereIn('id', $latestValidModuleIds)
                 ->count())
+                ->url(route('filament.admin.resources.modules.grade-d'))
                 ->description("Capacity between 1000-2000mAh")
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('warning'),
@@ -56,6 +61,7 @@ class ModulesOverview extends BaseWidget
             Stat::make('Grade E Modules', Module::where('capacitance', '<', 1000)
                 ->whereIn('id', $latestValidModuleIds)
                 ->count())
+                ->url(route('filament.admin.resources.modules.grade-e'))
                 ->description("Capacity less than 1000mAh")
                 ->descriptionIcon('heroicon-s-battery-0')
                 ->color('danger'),

@@ -44,6 +44,12 @@ class Module extends Model
                 }
             }
         });
+
+        static::updating(function($module){
+            if (isset($module->ir_value)) {
+                $module->ir_value = $module->ir_value / 1000;
+            }
+        });
     }
 
 
