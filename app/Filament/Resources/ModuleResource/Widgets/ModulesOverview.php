@@ -15,11 +15,21 @@ class ModulesOverview extends BaseWidget
         $startDate = Carbon::create(2025, 4, 7); // Start date: 07/04/2025
 
         // Get latest module IDs per serial number where latest module is NOT in CINU pack and created after 07/04/2025
+        $excludedSerialNumbers = DB::table('modules as m2')
+            ->select('m2.serial_number')
+            ->join('battery_packs as bp', 'm2.battery_pack_id', '=', 'bp.id')
+            ->where('bp.name', 'LIKE', 'CINU%')
+            ->orWhere('bp.name', 'LIKE', 'NU%')
+            ->groupBy('m2.serial_number')
+            ->havingRaw('COUNT(DISTINCT CASE WHEN bp.name LIKE "CINU%" THEN 1 END) > 0')
+            ->havingRaw('COUNT(DISTINCT CASE WHEN bp.name LIKE "NU%" THEN 1 END) > 0');
+
         $latestValidModuleIds = DB::table('modules as m1')
             ->select(DB::raw('MAX(m1.id) as id'))
             ->join('battery_packs as bp', 'm1.battery_pack_id', '=', 'bp.id')
             ->where('bp.name', 'NOT LIKE', 'CINU%')
             ->where('m1.created_at', '>', $startDate) // Only count modules created after 07/04/2025
+            ->whereNotIn('m1.serial_number', $excludedSerialNumbers)
             ->groupBy('m1.serial_number');
 
         return [
