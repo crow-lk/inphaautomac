@@ -58,6 +58,10 @@
                                 @endif
                             @elseif($item->is_service)
                                 {{ $item->service->name ?? 'N/A' }} <!-- Display service name -->
+                                @if($item->warranty_available)
+                                    <br>
+                                    <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
+                                @endif
                             @endif
                         </td>
                         <td style="width:20%; text-align: right; font-size: 11px;">{{ number_format($item->price, 2) }}</td>

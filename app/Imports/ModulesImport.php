@@ -45,17 +45,30 @@ class ModulesImport implements ToModel, WithHeadingRow
 
         // If the module type is CINU, get ir and capacitance from the latest module related to the battery pack
         if ($this->moduleType === 'CINU') {
-            // Retrieve the latest module associated with the battery pack
-            $relatedModule = Module::where('serial_number', $row['text'])
-                ->latest()
-                ->first();
+            // Retrieve the latest modules associated with the battery pack
+            // Filter modules where battery pack name starts with 'NU'
+            $relatedModules = Module::whereHas('batteryPack', function ($query) {
+                $query->where('name', 'like', 'NU%');
+            })
+            ->latest()
+            ->get();
 
-            // Check if a related module is found
-            if ($relatedModule) {
-                $module->ir_value = $relatedModule->ir_value; // Assuming 'ir' is a column in the Module model
-                $module->capacitance = $relatedModule->capacitance; // Assuming 'capacitance' is a column in the Module model
+            // Create an array to store the latest IR values for each serial number
+            $latestIrValues = [];
+
+            // Loop through each related module and store the latest IR values
+            foreach ($relatedModules as $relatedModule) {
+                $latestIrValues[$relatedModule->serial_number] = $relatedModule->ir_value;
+            }
+
+            // Update the IR values for the current module
+            if (isset($latestIrValues[$row['text']])) {
+                $module->ir_value = $latestIrValues[$row['text']];
+                // You can also update the capacitance value if needed
             }
         }
+
+
 
         return $module;
     }
