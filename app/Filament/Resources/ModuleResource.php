@@ -89,17 +89,18 @@ class ModuleResource extends Resource
                     ->html() // Ensure HTML is rendered
                     ->label('Serial Number'),
 
-                Tables\Columns\TextInputColumn::make('ir_value')
+                Tables\Columns\TextColumn::make('ir_value')
                     ->sortable()
                     ->searchable()
-                    ->label('IR Value (Ω)')->alignEnd()->type('number')->rules(['regex:/^\d{1,3}$/']),
+                    ->label('IR Value (Ω)')
+                    ->alignCenter(),
 
-                Tables\Columns\TextInputColumn::make('capacitance')
+                Tables\Columns\TextColumn::make('capacitance')
                     ->sortable()
                     ->searchable()
                     ->label('Capacitance (mAh)')
-                    ->alignEnd()
-                    ->rules(['regex:/^\d{1,4}$/']),
+                    ->alignCenter(),
+                    
 
                 //grade the battery pack based on the capacitance
 
@@ -146,7 +147,8 @@ class ModuleResource extends Resource
                 //checkbox colomn to mark inpha auto mac owned modules
                 Tables\Columns\CheckboxColumn::make('is_inpha_auto_mac_owned')
                     ->label('Inpha Auto Mac Owned')
-                    ->sortable(),
+                    ->sortable()
+                    ->alignCenter(),
 
                 //show created date without time
                 Tables\Columns\TextColumn::make('created_at')
@@ -234,4 +236,11 @@ class ModuleResource extends Resource
             'grade-e' => Pages\GradeE::route('/grade-e'),
         ];
     }
+
+    public static function getActiveBatteryPackFilter()
+    {
+        // Get the default battery pack ID from the filter
+        return \App\Models\BatteryPack::latest()->first()->id ?? null;
+    }
+
 }
