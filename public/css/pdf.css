@@ -1,0 +1,105 @@
+body {
+    font-family: "Open Sans", sans-serif;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-image: url("../images/BG2.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    margin-top: 140px;
+}
+
+.name {
+    font-size: 24px;
+}
+
+.inv {
+    font-family: Arial, sans-serif;
+    font-size: 48px;
+    font-weight: bold;
+    color: #d21404;
+    right: 20px;
+    position: fixed;
+    text-align: right;
+}
+
+.right {
+    right: 20px;
+    position: fixed;
+    text-align: right;
+}
+
+.left {
+    position: fixed;
+}
+
+.left p {
+    margin: 5px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 170px;
+    margin-bottom: 20px;
+}
+
+table,
+th,
+td {
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+}
+
+th,
+td {
+    padding: 5px;
+}
+
+th {
+    background-color: black;
+    color: white;
+    font-size: 14px;
+}
+
+.new {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.total {
+    padding: 8px;
+    background-color: #ddd;
+    color: black;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: right;
+}
+
+.text1 {
+    position: fixed;
+    top: 790px;
+    color: black;
+}
+
+.text2 {
+    position: fixed;
+    top: 850px;
+    color: black;
+}
+
+.h1 {
+    font-size: 14px;
+    line-height: 0.5;
+}
+
+.p1 {
+    font-size: 12px;
+    line-height: 0.5;
+}

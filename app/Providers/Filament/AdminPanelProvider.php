@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filamemt\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget\TodayInvIncomeWidget;
 use App\Filament\Resources\BatteryPackResource\Widgets\BatteryPacksOverview;
 use App\Filament\Resources\ModuleResource\Widgets\ModulesOverview;
 use App\Models\BatteryPack;
@@ -12,6 +13,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Auth;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -32,6 +34,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandLogo(asset('images/logo1.png'))
+            ->darkModeBrandLogo(asset('images/logo3.png'))
+            ->brandLogoHeight(fn() => Auth::check() ? '60px' : '90px')
+            ->favicon(asset('images/logof.png'))
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -43,10 +49,12 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 // Widgets\FilamentInfoWidget::class,
+                TodayInvIncomeWidget::class,
                 BatteryPacksOverview::class,
                 ModulesOverview::class,
+
             ])
-            
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

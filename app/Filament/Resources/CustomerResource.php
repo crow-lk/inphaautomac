@@ -25,6 +25,18 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('title')
+                    ->label('Title')
+                    ->options([
+                        'Mr.' => 'Mr. (Mister)',
+                        'Mrs.' => 'Mrs. (Mistress, married woman)',
+                        'Miss' => 'Miss (unmarried woman)',
+                        'Ms.' => 'Ms. (woman, regardless of marital status)',
+                        'Dr.' => 'Dr. (Doctor)',
+                        'Prof.' => 'Prof. (Professor)',
+                        'Company' => 'Company',
+                    ])
+                    ->nullable(),
                 Forms\Components\TextInput::make('name')->required(),
                 Forms\Components\TextInput::make('phone')->nullable(),
                 Forms\Components\TextInput::make('email')->nullable(),
@@ -36,6 +48,7 @@ class CustomerResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('title')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('phone')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('email')->sortable()->searchable(),

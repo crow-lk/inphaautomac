@@ -16,6 +16,8 @@ class Vehicle extends Model
         'brand',
         'model',
         'milage',
+        'is_km',
+        'is_miles',
         'customer_id',
     ];
 
@@ -29,8 +31,8 @@ class Vehicle extends Model
         return $this->hasOne(BatteryPack::class);
     }
 
-    public function inpha_jobs()
-    {
-        return $this->hasMany(Inpha_Job::class);
-    }
+    // public function inpha_jobs()
+    // {
+    //     return $this->hasMany(Inpha_Job::class);
+    // }
 }
