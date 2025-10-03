@@ -7,9 +7,14 @@ use Filament\Tables;
 use App\Models\Module;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Actions\Action; // Import the Action class
+use Illuminate\Support\Facades\Gate;
 
 class ModuleTracker extends Page implements Tables\Contracts\HasTable
 {
+    public static function canAccess(): bool
+    {
+        return Gate::allows('page_ModuleTracker');
+    }
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Inpha BMS';
     protected static ?int $navigationSort = 2;

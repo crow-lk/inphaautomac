@@ -7,9 +7,14 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Flowframe\Trend\Trend;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Invoice;
+use Illuminate\Support\Facades\Gate;
 
 class TodayInvIncomeWidget extends BaseWidget
 {
+    public static function canView(): bool
+    {
+        return Gate::allows('widget_TodayInvIncomeWidget');
+    }
     protected static string $view = 'filament-widgets::stats-overview-widget';
 
     protected function getColumns(): int

@@ -7,9 +7,14 @@ use Illuminate\Support\Facades\DB;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 
 class ModulesOverview extends BaseWidget
 {
+    public static function canView(): bool
+    {
+        return Gate::allows('widget_ModulesOverview');
+    }
     protected function getStats(): array
     {
         $startDate = Carbon::create(2025, 4, 7); // Start date: 07/04/2025

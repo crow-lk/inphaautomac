@@ -4,9 +4,14 @@ namespace App\Filament\Resources\BatteryPackResource\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Gate;
 
 class BatteryPacksOverview extends BaseWidget
 {
+    public static function canView(): bool
+    {
+        return Gate::allows('widget_BatteryPacksOverview');
+    }
     protected function getStats(): array
     {
         // Calculate all battery packs
