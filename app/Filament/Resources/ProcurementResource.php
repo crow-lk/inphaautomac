@@ -81,6 +81,7 @@ class ProcurementResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('item.name')
                     ->searchable()

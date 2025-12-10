@@ -35,6 +35,7 @@ class SuppliesResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('item_name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('qty')->sortable()->searchable(),

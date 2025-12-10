@@ -137,6 +137,7 @@ class PaymentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('reference_number')->label('Reference Number')->sortable(),
                 TextColumn::make('invoice_id')->label('Invoice')->sortable(),
