@@ -19,6 +19,11 @@ class Payment extends Model
         'discount',
     ];
 
+    protected $casts = [
+        'payment_date' => 'datetime',
+    ];
+
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);

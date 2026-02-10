@@ -27,6 +27,15 @@ class InvoiceResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $navigationGroup = 'Invoicing';
+    public static function getModelLabel(): string
+    {
+        return 'Job';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Jobs';
+    }
 
     public static function form(Form $form): Form
     {
@@ -34,7 +43,7 @@ class InvoiceResource extends Resource
             ->schema([
                 Forms\Components\Group::make([
                     Forms\Components\Checkbox::make('is_invoice')
-                        ->label('Invoice')
+                        ->label('Job Invoice')
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {
                             if ($state) {
@@ -42,11 +51,11 @@ class InvoiceResource extends Resource
                             }
                         }),
                     Forms\Components\Checkbox::make('is_quatation')
-                        ->label('Quatation')
+                        ->label('Job Quotation')
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {
                             if ($state) {
-                                $set('is_invoice', false); // Uncheck service if item is checked
+                                $set('is_invoice', false);
                             }
                         }),
                 ])
@@ -117,6 +126,7 @@ class InvoiceResource extends Resource
 
                 Forms\Components\Repeater::make('items')
                     ->relationship('invoiceItems') // Define the relationship
+                    ->label('Job Items')
                     ->schema([
                         Forms\Components\Group::make([
 
@@ -271,11 +281,10 @@ class InvoiceResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
-                    ->label('Invoice ID')
+                    ->label('Job ID')
                     ->sortable()
                     ->formatStateUsing(function ($state, $record) {
-                        // Assuming 'is_km' is a boolean field in the Invoice model
-                        return $state . ' - ' . ($record->is_invoice ? 'Invoice' : 'Quatation');
+                        return $state . ' - ' . ($record->is_invoice ? 'Job' : 'Quotation');
                     }),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Customer')

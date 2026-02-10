@@ -9,14 +9,14 @@
 </head>
 <body>
     <div class="inv">
-        <p><strong>{{ $invoice->is_invoice ? 'INVOICE' : 'QUATATION' }}</strong></p>
+        <p><strong>{{ $invoice->is_invoice ? 'INVOICE' : 'QUOTATION' }}</strong></p>
     </div>
     <div class="container">
         <div class="right">
             @if($invoice->is_invoice)
                 <p><strong>Invoice No:</strong> {{ $invoice->id }}</p>
             @else
-            <p><strong>Quatation No:</strong> {{ $invoice->id }}</p>
+            <p><strong>Quotation No:</strong> {{ $invoice->id }}</p>
             @endif
             <p>{{ $invoice->created_at->format('F j, Y') }}</p>
         </div>
