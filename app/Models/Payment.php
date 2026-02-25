@@ -53,27 +53,72 @@ class Payment extends Model
             $invoice->decrement('credit_balance', $effectiveAmount);
         });
 
+        // Adjust credit balance when a payment is updated
+        static::updating(function ($payment) {
+            $invoice = Invoice::find($payment->invoice_id);
+
+            // Calculate the OLD effective amount (what was previously applied)
+            $oldPayment = Payment::find($payment->id);
+            $oldEffectiveAmount = $oldPayment->amount_paid;
+            if ($oldPayment->discount_available && !empty($oldPayment->discount)) {
+                $oldEffectiveAmount = $oldPayment->discount + $oldPayment->amount_paid;
+            }
+            $oldEffectiveAmount = max(0, $oldEffectiveAmount);
+
+            // Calculate the NEW effective amount
+            $newEffectiveAmount = $payment->amount_paid;
+            if (!$payment->discount_available || empty($payment->discount)) {
+                $payment->discount = 0.00;
+            }
+            if ($payment->discount_available && !empty($payment->discount)) {
+                $newEffectiveAmount = $payment->discount + $payment->amount_paid;
+            }
+            $newEffectiveAmount = max(0, $newEffectiveAmount);
+
+            // Adjust the credit balance by the difference
+            $difference = $newEffectiveAmount - $oldEffectiveAmount;
+            if ($difference != 0) {
+                $invoice->decrement('credit_balance', $difference);
+            }
+        });
+
         // Restore credit balance if the payment is deleted
         static::deleting(function ($payment) {
-            // Calculate the effective amount to reduce from credit balance
+            // Calculate the effective amount to restore to credit balance
             $effectiveAmount = $payment->amount_paid;
 
-            // If a discount is available, reduce the effective amount
+            // If a discount is available, include it in the effective amount
             if ($payment->discount_available && !empty($payment->discount)) {
                 $effectiveAmount = $payment->discount + $payment->amount_paid;
             }
 
             // Ensure the effective amount does not go below zero
             $effectiveAmount = max(0, $effectiveAmount);
+
             // Restore credit balance
-            $payment->invoice->increment('credit_balance', $effectiveAmount);
+            $invoice = $payment->invoice;
+            $invoice->increment('credit_balance', $effectiveAmount);
+
+            // Refresh the invoice to get the updated credit_balance
+            $invoice->refresh();
+
+            // Update payment_status based on the restored credit balance
+            if ($invoice->credit_balance <= 0) {
+                $invoice->payment_status = 'Paid';
+                $invoice->credit_balance = 0;
+            } elseif ($invoice->credit_balance < $invoice->amount) {
+                $invoice->payment_status = 'Partial Paid';
+            } else {
+                $invoice->payment_status = 'Unpaid';
+            }
+            $invoice->save();
         });
 
         static::saved(function ($payment) {
             $invoice = Invoice::find($payment->invoice_id);
             $amount = $payment->amount_paid; // Use the amount paid for the message
             $totalAmount = $invoice->amount; // Get the total amount from the invoice
-            $creditBalance = $invoice->credit_balance; // Get the current credit balance
+            $creditBalance = $invoice->credit_balance; // Get the current credit balance (after decrement)
             $discount = $payment->discount_available ? $payment->discount : null; // Get discount if available
 
             // Determine the payment status and remaining balance
@@ -82,11 +127,15 @@ class Payment extends Model
                 $remainingBalance = $creditBalance; // Remaining balance
             } else {
                 $invoice->payment_status = 'Paid';
+                $invoice->credit_balance = 0; // Explicitly reset to 0 to avoid floating point residuals
                 $remainingBalance = 0; // No remaining balance
             }
 
-            // Check for overpayment
-            if ($amount > $creditBalance) {
+            $invoice->save(); // Save the updated invoice
+
+            // Send SMS notifications on both create and update
+            // Check for overpayment (credit_balance went negative)
+            if ($creditBalance < 0) {
                 self::sendSmsNotificationOverpayment(
                     self::formatPhoneNumber($payment->invoice->customer->phone),
                     $payment->invoice->customer->name,
@@ -95,7 +144,7 @@ class Payment extends Model
                     $invoice->id, // Invoice ID
                     abs($creditBalance) // Overpayment amount
                 );
-            } elseif ($remainingBalance > 0 && $remainingBalance != 0) {
+            } elseif ($remainingBalance > 0) {
                 // Send SMS for partial payment
                 self::sendSmsNotificationWithCreditBalance(
                     self::formatPhoneNumber($payment->invoice->customer->phone),
@@ -118,8 +167,6 @@ class Payment extends Model
                     $invoice->id // Invoice ID
                 );
             }
-
-            $invoice->save(); // Save the updated invoice
         });
     }
 

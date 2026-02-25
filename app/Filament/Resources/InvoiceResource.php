@@ -334,6 +334,11 @@ class InvoiceResource extends Resource
                     ->url(fn(Invoice $record) => route('invoices.pdf', $record->id))
                     ->icon('heroicon-o-printer')
                     ->label('')
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                ])
             ]);
     }
 
