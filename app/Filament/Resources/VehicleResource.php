@@ -26,13 +26,12 @@ class VehicleResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('number')->required(),
-                Forms\Components\Select::make('brand')->options([
-                    'Toyota' => 'Toyota',
-                    'Honda' => 'Honda',
-                    'Suzuki' => 'Suzuki',
-                    'Nissan' => 'Nissan',
-                    'Mitsubishi' => 'Mitsubishi'
-                ])->required(),
+                Forms\Components\Select::make('brand_id')
+                    ->label('Brand')
+                    ->relationship('brand', 'name')
+                    ->nullable()
+                    ->searchable()
+                    ->preload(),
                 Forms\Components\TextInput::make('model')->required(),
                 Forms\Components\TextInput::make('milage')->required(),
                 Forms\Components\Select::make('customer_id')
@@ -46,7 +45,7 @@ class VehicleResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('number')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('brand')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('brand.name')->label('Brand')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('model')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('milage')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
