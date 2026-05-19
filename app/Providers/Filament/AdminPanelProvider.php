@@ -38,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->darkModeBrandLogo(asset('images/logo3.png'))
             ->brandLogoHeight(fn() => Auth::check() ? '60px' : '90px')
             ->favicon(asset('images/logof.png'))
+            ->maxContentWidth('Full')
             ->colors([
                 'primary' => Color::Amber,
             ])

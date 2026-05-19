@@ -32,6 +32,8 @@ class ItemsResource extends Resource
                 'pair' => 'pair',
                 ])->required(),
             Forms\Components\TextInput::make('qty')->required(),
+            Forms\Components\TextInput::make('selling_price')->numeric()->default(0)->prefix('Rs.'),
+            Forms\Components\TextInput::make('cost_price')->numeric()->default(0)->prefix('Rs.'),
             Forms\Components\TextInput::make('comment'),
         ]);
     }
@@ -43,6 +45,8 @@ class ItemsResource extends Resource
                 Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('unit')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('qty')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('selling_price')->sortable()->money('LKR'),
+                Tables\Columns\TextColumn::make('cost_price')->sortable()->money('LKR'),
                 Tables\Columns\TextColumn::make('comment')->sortable()->searchable()])
             ->filters([
                 //

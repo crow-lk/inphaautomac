@@ -125,9 +125,10 @@ class InvoiceResource extends Resource
 
 
                 Forms\Components\Repeater::make('items')
-                    ->relationship('invoiceItems') // Define the relationship
-                    ->label('Job Items')
-                    ->schema([
+                     ->relationship('invoiceItems') // Define the relationship
+                     ->label('Job Items')
+                     ->live()
+                     ->schema([
                         Forms\Components\Group::make([
 
                             Forms\Components\Group::make([
@@ -173,58 +174,80 @@ class InvoiceResource extends Resource
                                 ->hidden(fn($get) => !$get('is_service')),
 
                             Forms\Components\Select::make('item_id')
-                                ->label('Item')
-                                ->options(function () {
-                                    return \App\Models\Item::pluck('name', 'id'); // Load items
-                                })
-                                ->reactive()
-                                ->searchable()
-                                ->createOptionForm(function () {
-                                    return [
-                                        Forms\Components\TextInput::make('name')->label('Item Name')->required(),
-                                        Forms\Components\Select::make('unit')->options([
-                                            'l' => 'Liters',
-                                            'ml' => 'Milliliters',
-                                            'pcs' => 'Pieces',
-                                            'pair' => 'Pair',
-                                        ])->required(),
-                                        Forms\Components\TextInput::make('qty')->label('Quantity')->numeric()->required(),
-                                        Forms\Components\TextInput::make('comment')->label('Comment'),
-                                    ];
-                                })
-                                ->createOptionUsing(function (array $data) {
-                                    $item = \App\Models\Item::create([
-                                        'name' => $data['name'],
-                                        'unit' => $data['unit'],
-                                        'qty' => $data['qty'],
-                                        'comment' => $data['comment'] ?? null,
-                                    ]);
-                                    return $item->id; // Return the item ID
-                                })
-                            ->required()
-                            ->hidden(fn($get) => !$get('is_item')),
+                                 ->label('Item')
+                                 ->options(function () {
+                                     return \App\Models\Item::pluck('name', 'id');
+                                 })
+                                 ->reactive()
+                                 ->live()
+                                 ->afterStateUpdated(function ($state, callable $set, $get) {
+                                     $item = \App\Models\Item::find($state);
+                                     if ($item) {
+                                         $set('price', $item->selling_price);
+                                     }
+                                 })
+                                 ->searchable()
+                                 ->createOptionForm(function () {
+                                     return [
+                                         Forms\Components\TextInput::make('name')->label('Item Name')->required(),
+                                         Forms\Components\Select::make('unit')->options([
+                                             'l' => 'Liters',
+                                             'ml' => 'Milliliters',
+                                             'pcs' => 'Pieces',
+                                             'pair' => 'Pair',
+                                         ])->required(),
+                                         Forms\Components\TextInput::make('qty')->label('Quantity')->numeric()->required(),
+                                         Forms\Components\TextInput::make('selling_price')->label('Selling Price')->numeric()->default(0),
+                                         Forms\Components\TextInput::make('cost_price')->label('Cost Price')->numeric()->default(0),
+                                         Forms\Components\TextInput::make('comment')->label('Comment'),
+                                     ];
+                                 })
+                                 ->createOptionUsing(function (array $data) {
+                                     $item = \App\Models\Item::create([
+                                         'name' => $data['name'],
+                                         'unit' => $data['unit'],
+                                         'qty' => $data['qty'],
+                                         'selling_price' => $data['selling_price'] ?? 0,
+                                         'cost_price' => $data['cost_price'] ?? 0,
+                                         'comment' => $data['comment'] ?? null,
+                                     ]);
+                                     return $item->id; // Return the item ID
+                                 })
+                             ->required()
+                             ->hidden(fn($get) => !$get('is_item')),
 
                         ])->columnSpanFull(),
 
                         Forms\Components\TextInput::make('quantity')
-                            ->default(1)
-                            ->numeric()
-                            ->required()
-                            ->reactive()
-                            ->debounce(1000)
-                            ->disabled(fn ($get) => $get('is_service'))
-                            ->afterStateUpdated(function ($state, callable $set, $get) {
-                                // If the item is a service, enforce quantity to be 1
-                                if ($get('is_service')) {
-                                    $set('quantity', 1); // Reset quantity to 1
-                                }
-                            }),
+                               ->default(1)
+                               ->numeric()
+                               ->required()
+                               ->live()
+                               ->disabled(fn ($get) => $get('is_service'))
+                               ->afterStateUpdated(function ($state, callable $set, $get) {
+                                   if ($get('is_service')) {
+                                       $set('quantity', 1);
+                                   }
+                               }),
                         Forms\Components\TextInput::make('price')
-                            ->required()
-                            ->numeric()
-                            ->reactive()
-                            ->debounce(2000)
-                            ->label('Unit Price'), // Reactive to trigger changes with debounce
+                                 ->required()
+                                 ->numeric()
+                                 ->live()
+                                 ->label('Unit Price')
+                                 ->suffixAction(
+                                     Forms\Components\Actions\Action::make('confirmPrice')
+                                         ->icon('heroicon-o-check')
+                                         ->action(function (callable $set, $get) {
+                                             // Force total calculation
+                                             $items = $get('../../items');
+                                             $total = 0;
+                                             if (is_array($items)) {
+                                                 $total = collect($items)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
+                                             }
+                                             $set('../../amount', $total);
+                                             $set('../../credit_balance', $total);
+                                         })
+                                 ),
                         Forms\Components\Checkbox::make('warranty_available')
                             ->label('Is Warranty Available?')
                             ->reactive()
@@ -302,7 +325,7 @@ class InvoiceResource extends Resource
                     ->formatStateUsing(function ($state, $record) {
                         // Access the related vehicle and concatenate brand and model
                         $vehicle = $record->vehicle; // Eager load the vehicle relationship
-                        return $vehicle ? "{$vehicle->brand} {$state}" : 'N/A'; // Return 'brand model' or 'N/A' if no vehicle
+                        return $vehicle ? "{$vehicle->brand_name} {$state}" : 'N/A'; // Return 'brand model' or 'N/A' if no vehicle
                     }),
                 Tables\Columns\TextColumn::make('mileage')
                     ->label('Mileage')

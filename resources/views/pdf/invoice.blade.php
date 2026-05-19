@@ -29,7 +29,7 @@
                 {{ $invoice->customer->name }}
             </p>
             <p><strong>Vehicle Number:</strong> {{ $invoice->vehicle->number }}</p>
-            <p><strong>Model:</strong> {{ $invoice->vehicle->brand }} {{ $invoice->model }}</p>
+            <p><strong>Model:</strong> {{ $invoice->vehicle->brand->name }} {{ $invoice->model }}</p>
             <p><strong>Mileage:</strong> {{ $invoice->mileage }} {{ $invoice->is_km ? 'KM' : 'Miles' }}</p>
         </div>
 
@@ -50,19 +50,27 @@
                     <tr>
                         <td style="width:10%; text-align: center; font-size: 11px;">{{ $index + 1 }}</td>
                         <td style="width:40%; text-align: left; font-size: 11px;">
-                            @if($item->is_item)
-                                {{ $item->item->name ?? 'N/A' }} <!-- Display item name -->
-                                @if($item->warranty_available)
-                                    <br>
-                                    <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
-                                @endif
-                            @elseif($item->is_service)
-                                {{ $item->service->name ?? 'N/A' }} <!-- Display service name -->
-                                @if($item->warranty_available)
-                                    <br>
-                                    <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
-                                @endif
-                            @endif
+                             @if($item->is_item)
+                                  {{ $item->item->name ?? 'N/A' }} <!-- Display item name -->
+                                  @if($item->warranty_available)
+                                      <br>
+                                      <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
+                                  @endif
+                                  @if(!empty($item->item->comment))
+                                      <br>
+                                      <span style="font-size: 0.8em;">{{ $item->item->comment }}</span>
+                                  @endif
+                             @elseif($item->is_service)
+                                  {{ $item->service->name ?? 'N/A' }} <!-- Display service name -->
+                                  @if($item->warranty_available)
+                                      <br>
+                                      <span style="font-size: 0.8em; font-weight: bold;">({{ $item->warranty_type }} Warranty)</span>
+                                  @endif
+                                  @if(!empty($item->service->comment))
+                                      <br>
+                                      <span style="font-size: 0.8em;">{{ $item->service->comment }}</span>
+                                  @endif
+                             @endif
                         </td>
                         <td style="width:20%; text-align: right; font-size: 11px;">{{ number_format($item->price, 2) }}</td>
                         <td style="width:10%; text-align: center; font-size: 11px;">

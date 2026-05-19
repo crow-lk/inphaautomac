@@ -28,7 +28,12 @@ class ProcurementResource extends Resource
                     ->required()
                     ->reactive()
                     ->label('Item Name')
-
+                    // ->createOptionForm([
+                    //     TextInput::make('name')
+                    //         ->required()
+                    //         ->maxLength(255),
+                    // ])
+                    // ->createOption()
                     ->afterStateUpdated(function ($state, callable $set) {
                         $item = \App\Models\Item::find($state);
 
@@ -36,6 +41,31 @@ class ProcurementResource extends Resource
                             $set('item_id', $item->id);
                         }
                     }),
+
+                Select::make('item_brand_id')
+                    ->relationship('itemBrand', 'name')
+                    ->label('Item Brand')
+                    ->placeholder('Select a brand')
+                    ->searchable()
+                    ->preload(),
+                    // ->createOptionForm([
+                    //     TextInput::make('name')
+                    //         ->required()
+                    //         ->maxLength(255),
+                    // ])
+                    // ->createOption(),
+
+                Select::make('vehicle_model')
+                    ->label('Vehicle Model')
+                    ->placeholder('Select a vehicle model')
+                    ->options(fn () => \App\Models\Vehicle::whereNotNull('model')->distinct()->pluck('model', 'model'))
+                    ->searchable()
+                    ->preload(),
+
+                TextInput::make('selling_price')
+                    ->numeric()
+                    ->step(0.01)
+                    ->label('Selling Price (LKR)'),
 
                 TextInput::make('unitcost')
                     ->numeric()
@@ -83,10 +113,24 @@ class ProcurementResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                TextColumn::make('item_id')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Item ID'),
+
                 TextColumn::make('item.name')
                     ->searchable()
                     ->sortable()
                     ->label('Item Name'),
+
+                TextColumn::make('vehicle.model')
+                    ->label('Vehicle Model')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('selling_price')
+                    ->sortable()
+                    ->label('Selling Price'),
 
                 TextColumn::make('unitcost')
 
@@ -102,10 +146,6 @@ class ProcurementResource extends Resource
                     ->sortable()
                     ->label('Total Cost'),
 
-                TextColumn::make('item_id')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Item ID'),
             ])
             ->filters([
                 // Add filters if needed
