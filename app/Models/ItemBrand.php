@@ -12,6 +12,6 @@ class ItemBrand extends Model
 
     public function items()
     {
-        return $this->hasMany(Item::class);
+        return $this->hasMany(Item::class, 'item_brand_id');
     }
 }

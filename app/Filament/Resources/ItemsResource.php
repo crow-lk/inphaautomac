@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ItemsResource\Pages;
 use App\Filament\Resources\ItemsResource\RelationManagers;
 use App\Models\Item;
+use App\Models\ItemBrand;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -32,6 +33,24 @@ class ItemsResource extends Resource
                 'pair' => 'pair',
                 ])->required(),
             Forms\Components\TextInput::make('qty')->required(),
+            Forms\Components\Select::make('item_brand_id')
+                ->label('Brand')
+                ->options(ItemBrand::query()->pluck('name', 'id'))
+                ->searchable()
+                ->preload()
+                ->nullable()
+                ->createOptionUsing(fn (array $data): int => ItemBrand::create($data)->id)
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->unique(ItemBrand::class, 'name')
+                        ->maxLength(255),
+                ])
+                ->createOptionAction(
+                    fn (Forms\Components\Actions\Action $action) => $action
+                        ->modalHeading('Create Brand')
+                        ->successNotificationTitle('Brand created'),
+                ),
             Forms\Components\TextInput::make('selling_price')->numeric()->default(0)->prefix('Rs.'),
             Forms\Components\TextInput::make('cost_price')->numeric()->default(0)->prefix('Rs.'),
             Forms\Components\TextInput::make('comment'),
@@ -45,6 +64,10 @@ class ItemsResource extends Resource
                 Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('unit')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('qty')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('brand.name')
+                    ->label('Brand')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('selling_price')->sortable()->money('LKR'),
                 Tables\Columns\TextColumn::make('cost_price')->sortable()->money('LKR'),
                 Tables\Columns\TextColumn::make('comment')->sortable()->searchable()])

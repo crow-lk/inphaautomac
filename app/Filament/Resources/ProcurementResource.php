@@ -25,35 +25,61 @@ class ProcurementResource extends Resource
                 Select::make('name')
                     ->relationship('item', 'name')
                     ->searchable()
-                    ->required()
                     ->reactive()
                     ->label('Item Name')
-                    // ->createOptionForm([
-                    //     TextInput::make('name')
-                    //         ->required()
-                    //         ->maxLength(255),
-                    // ])
-                    // ->createOption()
                     ->afterStateUpdated(function ($state, callable $set) {
                         $item = \App\Models\Item::find($state);
 
                         if ($item) {
                             $set('item_id', $item->id);
                         }
-                    }),
+                    })
+                    ->createOptionForm(function () {
+                        return [
+                            Forms\Components\TextInput::make('name')->label('Item Name')->required(),
+                            Forms\Components\Select::make('unit')->options([
+                                'l' => 'Liters',
+                                'ml' => 'Milliliters',
+                                'pcs' => 'Pieces',
+                                'pair' => 'Pair',
+                            ])->required(),
+                            Forms\Components\TextInput::make('qty')->label('Quantity')->numeric()->required(),
+                            Forms\Components\TextInput::make('selling_price')->label('Selling Price')->numeric()->default(0),
+                            Forms\Components\TextInput::make('cost_price')->label('Cost Price')->numeric()->default(0),
+                            Forms\Components\TextInput::make('comment')->label('Comment'),
+                        ];
+                    })
+                    ->createOptionUsing(function (array $data) {
+                        $item = \App\Models\Item::create([
+                            'name' => $data['name'],
+                            'unit' => $data['unit'],
+                            'qty' => $data['qty'],
+                            'selling_price' => $data['selling_price'] ?? 0,
+                            'cost_price' => $data['cost_price'] ?? 0,
+                            'comment' => $data['comment'] ?? null,
+                        ]);
+                        return $item->id; // Return the item ID
+                    })
+                    ->required(),
 
                 Select::make('item_brand_id')
                     ->relationship('itemBrand', 'name')
                     ->label('Item Brand')
                     ->placeholder('Select a brand')
                     ->searchable()
-                    ->preload(),
-                    // ->createOptionForm([
-                    //     TextInput::make('name')
-                    //         ->required()
-                    //         ->maxLength(255),
-                    // ])
-                    // ->createOption(),
+                    ->preload()
+                    ->createOptionUsing(fn (array $data): int => ItemBrand::create($data)->id)
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->unique(ItemBrand::class, 'name')
+                            ->maxLength(255),
+                    ])
+                    ->createOptionAction(
+                        fn (Forms\Components\Actions\Action $action) => $action
+                            ->modalHeading('Create Brand')
+                            ->successNotificationTitle('Brand created'),
+                    ),
 
                 Select::make('vehicle_model')
                     ->label('Vehicle Model')

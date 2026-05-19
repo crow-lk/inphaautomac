@@ -18,6 +18,7 @@ class Item extends Model
         'comment',
         'selling_price',
         'cost_price',
+        'item_brand_id',
     ];
 
     protected static function boot()
@@ -37,10 +38,10 @@ class Item extends Model
     }
 
 
-    public function brandItems()
-    {
-        return $this->hasMany(ItemBrand::class);
-    }
+    // public function brandItems()
+    // {
+    //     return $this->hasMany(ItemBrand::class);
+    // }
 
     public function procurement()
     {
@@ -49,6 +50,6 @@ class Item extends Model
 
     public function brand()
     {
-        return $this->belongsTo(ItemBrand::class);
+        return $this->belongsTo(ItemBrand::class, 'item_brand_id');
     }
 }
