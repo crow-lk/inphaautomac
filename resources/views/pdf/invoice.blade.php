@@ -29,7 +29,7 @@
                 {{ $invoice->customer->name }}
             </p>
             <p><strong>Vehicle Number:</strong> {{ $invoice->vehicle->number }}</p>
-            <p><strong>Model:</strong> {{ $invoice->vehicle->brand->name }} {{ $invoice->model }}</p>
+            <p><strong>Model:</strong> {{ $invoice->vehicle->brand->name ?? $invoice->vehicle->brand }} {{ $invoice->model }}</p>
             <p><strong>Mileage:</strong> {{ $invoice->mileage }} {{ $invoice->is_km ? 'KM' : 'Miles' }}</p>
         </div>
 
