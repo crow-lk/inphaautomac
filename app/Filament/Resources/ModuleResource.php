@@ -50,7 +50,6 @@ class ModuleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('serial_number')
                     ->sortable()
@@ -60,7 +59,7 @@ class ModuleResource extends Resource
 
                         // Check if capacitance is below 1500 to display the badge
                         if ($record->capacitance < 1500) {
-                            $badge = '<span style="color: black; background-color: yellow; padding: 2px 5px; border-radius: 5px;">Solar</span>';
+                            $badge = '<span style="color: black; background-color: yellow; padding: 2px 5px; border-radius: 5px;">Weak</span>';
                         } else {
                             // Define the ranges for capacitance and IR value
                             $capacitanceRange = 100; // Change this value as needed
@@ -80,7 +79,7 @@ class ModuleResource extends Resource
                                 // Check if the capacitance and IR value have not changed more than the defined ranges
                                 if (abs($record->capacitance - $previousCapacitance) <= $capacitanceRange &&
                                     abs($record->ir_value - $previousIrValue) <= $irValueRange) {
-                                    $badge .= '<span style="color: green; background-color: lightgreen; padding: 2px 5px; border-radius: 5px;">Good Modules</span>';
+                                    $badge .= '<span style="color: green; background-color: lightgreen; padding: 2px 5px; border-radius: 5px;">Good Module</span>';
                                 }
                             }
                         }
@@ -90,17 +89,18 @@ class ModuleResource extends Resource
                     ->html() // Ensure HTML is rendered
                     ->label('Serial Number'),
 
-                Tables\Columns\TextInputColumn::make('ir_value')
+                Tables\Columns\TextColumn::make('ir_value')
                     ->sortable()
                     ->searchable()
-                    ->label('IR Value (Ω)')->alignEnd()->type('number')->rules(['regex:/^\d{1,3}$/']),
+                    ->label('IR Value (Ω)')
+                    ->alignCenter(),
 
-                Tables\Columns\TextInputColumn::make('capacitance')
+                Tables\Columns\TextColumn::make('capacitance')
                     ->sortable()
                     ->searchable()
                     ->label('Capacitance (mAh)')
-                    ->alignEnd()
-                    ->rules(['regex:/^\d{1,4}$/']),
+                    ->alignCenter(),
+
 
                 //grade the battery pack based on the capacitance
 
@@ -147,7 +147,8 @@ class ModuleResource extends Resource
                 //checkbox colomn to mark inpha auto mac owned modules
                 Tables\Columns\CheckboxColumn::make('is_inpha_auto_mac_owned')
                     ->label('Inpha Auto Mac Owned')
-                    ->sortable(),
+                    ->sortable()
+                    ->alignCenter(),
 
                 //show created date without time
                 Tables\Columns\TextColumn::make('created_at')
@@ -235,4 +236,11 @@ class ModuleResource extends Resource
             'grade-e' => Pages\GradeE::route('/grade-e'),
         ];
     }
+
+    public static function getActiveBatteryPackFilter()
+    {
+        // Get the default battery pack ID from the filter
+        return \App\Models\BatteryPack::latest()->first()->id ?? null;
+    }
+
 }
