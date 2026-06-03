@@ -28,26 +28,28 @@ class BatteryPackResource extends Resource
         return $form
             ->schema([
                 //make the name according to the id as NU-000001, NU-000002, etc
-                Forms\Components\TextInput::make('name')->required()->disabled()->default(function ($record) {
+                Forms\Components\Toggle::make('is_brand_new')
+                    ->label('Brand New')
+                    ->default(false)
+                    ->live()
+                    ->helperText('Check if this is a brand new battery to use BNU- prefix instead of NU-'),
+                Forms\Components\TextInput::make('name')->required()->disabled()->dehydrated(false)->default(function ($record, $get) {
                     // Set a default name only when creating a new record
                     if (is_null($record)) {
                         $nextId = \App\Models\BatteryPack::max('id') + 1;
-                        // $totalCount = \App\Models\BatteryPack::withTrashed()->count() + 1;
-                        return 'NU-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+                        $prefix = $get('is_brand_new') ? 'BNU-' : 'NU-';
+                        return $prefix . str_pad($nextId, 7, '0', STR_PAD_LEFT);
                     }
                 })
                 ->afterStateHydrated(function ($component, $state) {
-                    // Reflect the saved state in the form
                     if ($state) {
                         $component->state($state);
                     }
                 }),
                 Forms\Components\Select::make('no_of_modules')->options([
-                    //if prius, 28 modules, if Aqua/Axiom, 20 modules
                     '28' => 'Prius (28 Modules)',
                     '20' => 'Aqua/ Axio (20 Modules)',
                 ])
-                
                 ->required(),
                 Forms\Components\Select::make('vehicle_id')
                     ->relationship('vehicle', 'number')

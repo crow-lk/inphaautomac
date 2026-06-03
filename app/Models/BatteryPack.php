@@ -15,6 +15,7 @@ class BatteryPack extends Model
         'name',
         'no_of_modules',
         'vehicle_id',
+        'is_brand_new',
     ];
 
     public function modules()
@@ -33,9 +34,9 @@ class BatteryPack extends Model
         parent::boot();
 
         static::creating(function ($batteryPack) {
-            //naming convension is NU-0000001, NU-0000002, etc
             $nextId = self::max('id') + 1;
-            $batteryPack->name = 'NU-' . str_pad($nextId, 7, '0', STR_PAD_LEFT);
+            $prefix = $batteryPack->getAttribute('is_brand_new') ? 'BNU-' : 'NU-';
+            $batteryPack->name = $prefix . str_pad($nextId, 7, '0', STR_PAD_LEFT);
         });
     }
 }

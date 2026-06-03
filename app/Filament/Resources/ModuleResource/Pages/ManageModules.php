@@ -33,6 +33,7 @@ class ManageModules extends ManageRecords
                         ->label('Module Type')
                         ->options([
                             'NU' => 'NU',
+                            'BNU' => 'BNU',
                             'CINU' => 'CINU',
                         ])
                         ->required(),
