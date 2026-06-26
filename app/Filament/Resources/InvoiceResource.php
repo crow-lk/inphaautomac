@@ -232,22 +232,17 @@ class InvoiceResource extends Resource
                         Forms\Components\TextInput::make('price')
                                  ->required()
                                  ->numeric()
-                                 ->live()
+                                 ->live(debounce: 500)
                                  ->label('Unit Price')
-                                 ->suffixAction(
-                                     Forms\Components\Actions\Action::make('confirmPrice')
-                                         ->icon('heroicon-o-check')
-                                         ->action(function (callable $set, $get) {
-                                             // Force total calculation
-                                             $items = $get('../../items');
-                                             $total = 0;
-                                             if (is_array($items)) {
-                                                 $total = collect($items)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
-                                             }
-                                             $set('../../amount', $total);
-                                             $set('../../credit_balance', $total);
-                                         })
-                                 ),
+                                 ->afterStateUpdated(function ($state, callable $set, $get) {
+                                       $items = $get('../../items');
+                                       $total = 0;
+                                       if (is_array($items)) {
+                                           $total = collect($items)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
+                                       }
+                                       $set('../../amount', $total);
+                                       $set('../../credit_balance', $total);
+                                   }),
                         Forms\Components\Checkbox::make('warranty_available')
                             ->label('Is Warranty Available?')
                             ->reactive()
