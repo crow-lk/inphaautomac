@@ -234,14 +234,14 @@ class InvoiceResource extends Resource
                                  ->numeric()
                                  ->live(debounce: 500)
                                  ->label('Unit Price')
-                                 ->afterStateUpdated(function ($state, callable $set, $get) {
+                                 ->afterStateUpdated(function ($state, callable $set, $get, ?Invoice $record) {
                                        $items = $get('../../items');
                                        $total = 0;
                                        if (is_array($items)) {
                                            $total = collect($items)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
                                        }
                                        $set('../../amount', $total);
-                                       $set('../../credit_balance', $total);
+                                       $set('../../credit_balance', self::outstandingBalance($total, $record));
                                    }),
                         Forms\Components\Checkbox::make('warranty_available')
                             ->label('Is Warranty Available?')
@@ -267,11 +267,11 @@ class InvoiceResource extends Resource
                             ->disabled(fn($get) => !$get('warranty_available')), // Disable if warranty is not available
                     ])
                     ->reactive() // Make the repeater reactive
-                    ->afterStateUpdated(function ($state, callable $set) {
+                    ->afterStateUpdated(function ($state, callable $set, ?Invoice $record) {
                         $total = collect($state)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
 
                         $set('amount', $total);
-                        $set('credit_balance', $total);
+                        $set('credit_balance', self::outstandingBalance($total, $record));
                     })->columnSpanFull()->collapsible()
                     ->itemLabel(fn (array $state): ?string => $state['description'] ?? null),
 
@@ -290,6 +290,20 @@ class InvoiceResource extends Resource
                     ->reactive()
 
             ]);
+    }
+
+    private static function outstandingBalance(float $total, ?Invoice $invoice): float
+    {
+        if (!$invoice) {
+            return $total;
+        }
+
+        $paid = $invoice->payments()->get()->sum(fn ($payment) =>
+            (float) $payment->amount_paid
+            + ($payment->discount_available ? (float) $payment->discount : 0)
+        );
+
+        return max(0, $total - $paid);
     }
 
 

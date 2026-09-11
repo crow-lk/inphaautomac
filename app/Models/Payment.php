@@ -114,6 +114,10 @@ class Payment extends Model
             $invoice->save();
         });
 
+        static::deleted(function (Payment $payment) {
+            $payment->invoice?->recalculateTotals();
+        });
+
         static::saved(function ($payment) {
             $invoice = Invoice::find($payment->invoice_id);
             $amount = $payment->amount_paid; // Use the amount paid for the message

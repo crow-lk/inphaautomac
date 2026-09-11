@@ -44,8 +44,50 @@ class Invoice extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function recalculateTotals(): void
+    {
+        $total = (float) $this->invoiceItems()
+            ->selectRaw('COALESCE(SUM(quantity * price), 0) as total')
+            ->value('total');
+
+        $paid = $this->payments()->get()->sum(function (Payment $payment): float {
+            return (float) $payment->amount_paid
+                + ($payment->discount_available ? (float) $payment->discount : 0);
+        });
+
+        $balance = max(0, $total - $paid);
+
+        $this->forceFill([
+            'amount' => $total,
+            'credit_balance' => $balance,
+            'payment_status' => $balance <= 0 && $total > 0
+                ? 'Paid'
+                : ($paid > 0 ? 'Partial Paid' : 'Unpaid'),
+        ])->saveQuietly();
+    }
+
     protected static function booted()
     {
+        static::saving(function (Invoice $invoice) {
+            if (!$invoice->exists) {
+                return;
+            }
+
+            $total = (float) $invoice->invoiceItems()
+                ->selectRaw('COALESCE(SUM(quantity * price), 0) as total')
+                ->value('total');
+            $paid = $invoice->payments()->get()->sum(function (Payment $payment): float {
+                return (float) $payment->amount_paid
+                    + ($payment->discount_available ? (float) $payment->discount : 0);
+            });
+
+            $invoice->amount = $total;
+            $invoice->credit_balance = max(0, $total - $paid);
+            $invoice->payment_status = $invoice->credit_balance <= 0 && $total > 0
+                ? 'Paid'
+                : ($paid > 0 ? 'Partial Paid' : 'Unpaid');
+        });
+
         static::saved(function ($invoice) {
             // Check if the invoice is newly created and has no payments
             if ($invoice->wasRecentlyCreated && $invoice->payments()->count() === 0) {

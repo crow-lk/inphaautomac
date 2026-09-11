@@ -42,6 +42,14 @@ class InvoiceItem extends Model
                 }
             }
         });
+
+        static::saved(function (InvoiceItem $invoiceItem) {
+            $invoiceItem->invoice?->recalculateTotals();
+        });
+
+        static::deleted(function (InvoiceItem $invoiceItem) {
+            $invoiceItem->invoice?->recalculateTotals();
+        });
     }
 
     public function invoice()
