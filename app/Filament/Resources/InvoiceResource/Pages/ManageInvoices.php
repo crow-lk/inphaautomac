@@ -13,7 +13,7 @@ class ManageInvoices extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->url(InvoiceResource::getUrl('create')),
         ];
     }
 

@@ -2,23 +2,26 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\InvoiceItemRelationManagerResource\RelationManagers\InvoiceItemsRelationManager;
 use App\Filament\Resources\InvoiceResource\Pages;
-use App\Filament\Resources\RelationManagers;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use Filament\Forms;
+use App\Models\Item;
+use App\Models\Service;
+use App\Models\Vehicle;
+use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Dompdf\Dompdf;
-use App\Http\Controllers\InvoiceController;
-use App\Models\Customer;
-use App\Models\Vehicle;
-use Filament\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class InvoiceResource extends Resource
 {
@@ -27,351 +30,258 @@ class InvoiceResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $navigationGroup = 'Invoicing';
-    public static function getModelLabel(): string
-    {
-        return 'Job';
-    }
 
-    public static function getPluralModelLabel(): string
-    {
-        return 'Jobs';
-    }
+    protected static ?string $modelLabel = 'Job';
+
+    protected static ?string $pluralModelLabel = 'Jobs';
 
     public static function form(Form $form): Form
     {
-        return $form
+        return $form->schema([
+            Section::make('Job details')->schema([
+                self::exclusiveToggle('is_invoice', 'Job Invoice', 'is_quatation'),
+                self::exclusiveToggle('is_quatation', 'Job Quotation', 'is_invoice'),
+                Select::make('customer_id')->relationship('customer', 'name')->searchable()->required()->live()
+                    ->afterStateUpdated(function (Set $set) {
+                        $set('vehicle_id', null);
+                        $set('model', null);
+                    }),
+                Select::make('vehicle_id')->label('Vehicle')
+                    ->relationship('vehicle', 'number', fn (Builder $query, Get $get) => $query->where('customer_id', $get('customer_id')))->preload()
+                    ->searchable()->required()->live()
+                    ->disabled(fn (Get $get): bool => ! $get('customer_id'))
+                    ->afterStateUpdated(fn ($state, Set $set) => $set('model', Vehicle::find($state)?->model)),
+                TextInput::make('model')->required()->maxLength(255),
+                TextInput::make('mileage')->numeric()->minValue(0)->required(),
+                self::exclusiveToggle('is_km', 'Kilometres', 'is_miles')->default(true),
+                self::exclusiveToggle('is_miles', 'Miles', 'is_km')->default(false),
+            ])->columns(2),
+            Section::make('Job items')->description('Search or create a part or service, enter its details, then confirm to add it.')
+                ->schema([self::catalogueSelect('item'), self::catalogueSelect('service'), self::itemsRepeater()])->columns(2),
+            Section::make('Totals')->schema([
+                TextInput::make('amount')->label('Total amount')->prefix('LKR')->numeric()->default(0)->readOnly(),
+                TextInput::make('credit_balance')->label('To pay')->prefix('LKR')->numeric()->default(0)->readOnly()
+                    ->helperText('Payments and applicable discounts are deducted automatically.'),
+            ])->columns(2),
+        ])->columns(1);
+    }
+
+    private static function exclusiveToggle(string $name, string $label, string $other): Toggle
+    {
+        return Toggle::make($name)->label($label)->live()
+            ->afterStateUpdated(function (bool $state, Set $set) use ($other) {
+                if ($state) {
+                    $set($other, false);
+                }
+            });
+    }
+
+    private static function itemsRepeater(): Repeater
+    {
+        return Repeater::make('items')->relationship('invoiceItems')->hiddenLabel()
+            ->addable(false)->defaultItems(0)->minItems(1)->columnSpanFull()
+            ->view('filament.forms.components.job-items-table')->reorderable(false)->columns(2)
+            ->itemLabel(function (array $state): string {
+                $service = (bool) ($state['is_service'] ?? false);
+                $name = $service
+                    ? Service::find($state['service_id'] ?? null)?->name
+                    : Item::find($state['item_id'] ?? null)?->name;
+
+                return ($name ?? ($service ? 'Service' : 'Item'))
+                    .' | Qty '.($state['quantity'] ?? 1).' | LKR '.number_format(self::itemsTotal([$state]), 2);
+            })
             ->schema([
-                Forms\Components\Group::make([
-                    Forms\Components\Checkbox::make('is_invoice')
-                        ->label('Job Invoice')
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set) {
-                            if ($state) {
-                                $set('is_quatation', false);
-                            }
-                        }),
-                    Forms\Components\Checkbox::make('is_quatation')
-                        ->label('Job Quotation')
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set) {
-                            if ($state) {
-                                $set('is_invoice', false);
-                            }
-                        }),
-                ])
-                    ->label('Invoice Type')
-                    ->columns(2),
-
-                Forms\Components\Select::make('customer_id')
-                    ->label('Customer')
-                    ->relationship('customer', 'name')
-                    ->required()
-                    ->reactive()
-                    ->searchable()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        $set('vehicle_id', null); // Reset vehicle selection
-                    })
-                    ->columnSpan('full'), // Make it span the full width of the row
-
-                Forms\Components\Select::make('vehicle_id')
-                    ->label('Vehicle')
-                    ->options(function (callable $get) {
-                        $customerId = $get('customer_id');
-                        return Vehicle::where('customer_id', $customerId)->pluck('number', 'id');
-                    })
-                    ->required()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        // Load vehicle details when a vehicle is selected
-                        $vehicle = Vehicle::find($state);
-                        if ($vehicle) {
-                            $set('model', $vehicle->model); // Assuming 'model' is the field in the Vehicle model
+                Toggle::make('is_service')->label('Service')->live()
+                    ->afterStateUpdated(function (bool $state, Set $set) {
+                        $set('is_item', ! $state);
+                        if ($state) {
+                            $set('item_id', null);
+                            $set('quantity', 1);
                         } else {
-                            $set('model', null);
+                            $set('service_id', null);
                         }
+                    }),
+                Toggle::make('is_item')->label('Item')->default(true)->live()
+                    ->afterStateUpdated(function (bool $state, Set $set) {
+                        $set('is_service', ! $state);
+                        if ($state) {
+                            $set('service_id', null);
+                        } else {
+                            $set('item_id', null);
+                            $set('quantity', 1);
+                        }
+                    }),
+                Select::make('service_id')->label('Service')->relationship('service', 'name')->searchable()->preload()->dehydratedWhenHidden()
+                    ->visible(fn (Get $get): bool => (bool) $get('is_service'))
+                    ->required(fn (Get $get): bool => (bool) $get('is_service'))
+                    ->createOptionForm([
+                        TextInput::make('name')->required()->maxLength(255),
+                        Textarea::make('description'),
+                    ])->createOptionUsing(fn (array $data) => Service::create($data)->getKey())->columnSpanFull(),
+                Select::make('item_id')->label('Item')->relationship('item', 'name')->searchable()->preload()->live()->dehydratedWhenHidden()
+                    ->visible(fn (Get $get): bool => (bool) $get('is_item'))
+                    ->required(fn (Get $get): bool => (bool) $get('is_item'))
+                    ->afterStateUpdated(function ($state, Set $set, Select $component) {
+                        $set('price', Item::find($state)?->selling_price ?? 0);
+                        $component->getParentRepeater()?->callAfterStateUpdated();
                     })
-                    ->columnSpan('full'), // Make it span the full width of the row
+                    ->createOptionForm(self::newItemSchema())
+                    ->createOptionUsing(fn (array $data) => Item::create($data)->getKey())->columnSpanFull(),
+                TextInput::make('quantity')->numeric()->required()->default(1)->minValue(0.001)->live(debounce: 300)
+                    ->disabled(fn (Get $get): bool => (bool) $get('is_service'))->dehydrated(),
+                TextInput::make('price')->label('Unit price')->prefix('LKR')->numeric()->required()->minValue(0)->live(debounce: 300),
+                Toggle::make('warranty_available')->label('Warranty available')->live()
+                    ->afterStateUpdated(function (bool $state, Set $set) {
+                        if (! $state) {
+                            $set('warranty_type', null);
+                        }
+                    }),
+                Select::make('warranty_type')->options([
+                    '1 month' => '1 Month', '3 months' => '3 Months', '6 months' => '6 Months',
+                    '1 year' => '1 Year', '2 years' => '2 Years', '3 years' => '3 Years',
+                ])->required(fn (Get $get): bool => (bool) $get('warranty_available'))
+                    ->visible(fn (Get $get): bool => (bool) $get('warranty_available'))->dehydratedWhenHidden()->dehydrated(),
+            ])
+            // The repeater receives the parent Invoice; its child fields receive InvoiceItem.
+            ->afterStateUpdated(function (?array $state, Set $set, ?Invoice $record) {
+                $total = self::itemsTotal($state ?? []);
+                $set('amount', $total);
+                $set('credit_balance', self::outstandingBalance($total, $record));
+            });
+    }
 
-                Forms\Components\TextInput::make('model')
-                    ->required()->columnSpanFull(),
-                Forms\Components\Group::make([
-                    Forms\Components\TextInput::make('mileage')
-                        ->label('Mileage')
-                        ->required()
-                        ->numeric()->columnSpanFull(),
-                    Forms\Components\Group::make([
-                        Forms\Components\Checkbox::make('is_km')
-                            ->label('km')
-                            ->default(true)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                if ($state) {
-                                    $set('is_miles', false); // Uncheck miles if km is checked
-                                }
-                            }),
-                        Forms\Components\Checkbox::make('is_miles')
-                            ->label('miles')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                if ($state) {
-                                    $set('is_km', false); // Uncheck km if miles is checked
-                                }
-                            }),
-                    ])->columns(2),
-                ])->columnSpanFull(),
+    private static function itemDetailsAction(string $type): Action
+    {
+        $model = $type === 'service' ? Service::class : Item::class;
 
+        return Action::make('addDetails')->label('Add')->icon('heroicon-m-plus')->button()
+            ->tooltip('Enter details and add to job')
+            ->disabled(fn (Select $component): bool => blank($component->getState()))
+            ->modalHeading(fn (Select $component): string => 'Add '.($model::find($component->getState())?->name ?? $type))
+            ->modalWidth('2xl')->modalSubmitActionLabel('Confirm and add')->closeModalByClickingAway(false)
+            ->fillForm(fn (Select $component): array => [
+                'catalogue_id' => $component->getState(),
+                'quantity' => 1,
+                'price' => $type === 'item' ? (Item::find($component->getState())?->selling_price ?? 0) : 0,
+                'warranty_available' => false,
+                'warranty_type' => null,
+            ])
+            ->form([
+                Hidden::make('catalogue_id')->required()->exists($model, 'id'),
+                TextInput::make('quantity')->numeric()->required()->default(1)->minValue(0.001)
+                    ->disabled($type === 'service')->dehydrated(),
+                TextInput::make('price')->label('Unit price')->prefix('LKR')->numeric()->required()->default(0)->minValue(0),
+                Toggle::make('warranty_available')->label('Warranty available')->default(false)->live()
+                    ->afterStateUpdated(function (bool $state, Set $set) {
+                        if (! $state) {
+                            $set('warranty_type', null);
+                        }
+                    }),
+                Select::make('warranty_type')->options([
+                    '1 month' => '1 Month', '3 months' => '3 Months', '6 months' => '6 Months',
+                    '1 year' => '1 Year', '2 years' => '2 Years', '3 years' => '3 Years',
+                ])->required(fn (Get $get): bool => (bool) $get('warranty_available'))
+                    ->visible(fn (Get $get): bool => (bool) $get('warranty_available'))->dehydratedWhenHidden()->dehydrated(),
+            ])
+            ->action(function (array $data, Select $component) use ($type): void {
+                $service = $type === 'service';
+                $entry = [
+                    'is_service' => $service,
+                    'is_item' => ! $service,
+                    'service_id' => $service ? $data['catalogue_id'] : null,
+                    'item_id' => $service ? null : $data['catalogue_id'],
+                    'quantity' => $service ? 1 : $data['quantity'],
+                    'price' => $data['price'],
+                    'warranty_available' => (bool) ($data['warranty_available'] ?? false),
+                    'warranty_type' => ($data['warranty_available'] ?? false) ? ($data['warranty_type'] ?? null) : null,
+                ];
+                $repeater = collect($component->getContainer()->getComponents())
+                    ->first(fn ($field): bool => $field instanceof Repeater);
+                $items = $repeater->getState() ?? [];
+                $items[(string) \Illuminate\Support\Str::uuid()] = $entry;
+                $repeater->state($items);
+                $repeater->callAfterStateUpdated();
+                $component->state(null);
+            });
+    }
 
+    private static function catalogueSelect(string $type): Select
+    {
+        $model = $type === 'service' ? Service::class : Item::class;
 
+        return Select::make('pick_'.$type.'_id')->label($type === 'item' ? 'Add items' : 'Add services')
+            ->placeholder('Search or create '.($type === 'item' ? 'an item' : 'a service'))
+            ->searchable()->preload()->live()->dehydrated(false)
+            ->options(fn (): array => $model::query()->orderBy('name')->limit(50)->pluck('name', 'id')->all())
+            ->getSearchResultsUsing(fn (string $search): array => $model::query()
+                ->where('name', 'like', '%'.$search.'%')->orderBy('name')->limit(50)->pluck('name', 'id')->all())
+            ->getOptionLabelUsing(fn ($value): ?string => $model::find($value)?->name)
+            ->createOptionForm($type === 'service' ? [
+                TextInput::make('name')->required()->maxLength(255),
+                Textarea::make('description'),
+            ] : self::newItemSchema())
+            ->createOptionUsing(fn (array $data) => $model::create($data)->getKey())
+            ->suffixAction(self::itemDetailsAction($type))
+            ->helperText('Select or create, then click Add to enter details.');
+    }
 
-                Forms\Components\Repeater::make('items')
-                     ->relationship('invoiceItems') // Define the relationship
-                     ->label('Job Items')
-                     ->live()
-                     ->schema([
-                        Forms\Components\Group::make([
+    private static function newItemSchema(): array
+    {
+        return [
+            TextInput::make('name')->label('Item name')->required()->maxLength(255),
+            Select::make('unit')->options(['l' => 'Liters', 'ml' => 'Milliliters', 'pcs' => 'Pieces', 'pair' => 'Pair'])->required(),
+            TextInput::make('qty')->label('Quantity')->numeric()->required()->minValue(0),
+            TextInput::make('selling_price')->numeric()->default(0)->minValue(0),
+            TextInput::make('cost_price')->numeric()->default(0)->minValue(0),
+            Textarea::make('comment'),
+        ];
+    }
 
-                            Forms\Components\Group::make([
-                                Forms\Components\Checkbox::make('is_service')
-                                    ->label('Service')
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state, callable $set) {
-                                        if ($state) {
-                                            $set('is_item', false); // Uncheck item if service is checked
-                                            $set('quantity', 1); // Set quantity to 1 if it's a service
-                                        }
-                                    }),
-                                Forms\Components\Checkbox::make('is_item')
-                                    ->label('Item')
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state, callable $set) {
-                                        if ($state) {
-                                            $set('is_service', false); // Uncheck service if item is checked
-                                        }
-                                    }),
-                            ])->columns(2),
-                            Forms\Components\Select::make('service_id')
-                                ->label('Service')
-                                ->options(function () {
-                                    return \App\Models\Service::pluck('name', 'id'); // Load services
-                                })
-                                ->reactive()
-                                ->required()
-                                ->searchable()
-                                ->createOptionForm(function () {
-                                    return [
-                                        Forms\Components\TextInput::make('name')->label('Service Name')->required(),
-                                        Forms\Components\TextInput::make('description')->label('Description'),
-                                    ];
-                                })
-                                ->createOptionUsing(function (array $data) {
-                                    $service = \App\Models\Service::create([
-                                        'name' => $data['name'],
-                                        'description' => $data['description'] ?? null,
-                                    ]);
-                                    return $service->id; // Return the service ID
-                                })
-                                ->hidden(fn($get) => !$get('is_service')),
-
-                            Forms\Components\Select::make('item_id')
-                                 ->label('Item')
-                                 ->options(function () {
-                                     return \App\Models\Item::pluck('name', 'id');
-                                 })
-                                 ->reactive()
-                                 ->live()
-                                 ->afterStateUpdated(function ($state, callable $set, $get) {
-                                     $item = \App\Models\Item::find($state);
-                                     if ($item) {
-                                         $set('price', $item->selling_price);
-                                     }
-                                 })
-                                 ->searchable()
-                                 ->createOptionForm(function () {
-                                     return [
-                                         Forms\Components\TextInput::make('name')->label('Item Name')->required(),
-                                         Forms\Components\Select::make('unit')->options([
-                                             'l' => 'Liters',
-                                             'ml' => 'Milliliters',
-                                             'pcs' => 'Pieces',
-                                             'pair' => 'Pair',
-                                         ])->required(),
-                                         Forms\Components\TextInput::make('qty')->label('Quantity')->numeric()->required(),
-                                         Forms\Components\TextInput::make('selling_price')->label('Selling Price')->numeric()->default(0),
-                                         Forms\Components\TextInput::make('cost_price')->label('Cost Price')->numeric()->default(0),
-                                         Forms\Components\TextInput::make('comment')->label('Comment'),
-                                     ];
-                                 })
-                                 ->createOptionUsing(function (array $data) {
-                                     $item = \App\Models\Item::create([
-                                         'name' => $data['name'],
-                                         'unit' => $data['unit'],
-                                         'qty' => $data['qty'],
-                                         'selling_price' => $data['selling_price'] ?? 0,
-                                         'cost_price' => $data['cost_price'] ?? 0,
-                                         'comment' => $data['comment'] ?? null,
-                                     ]);
-                                     return $item->id; // Return the item ID
-                                 })
-                             ->required()
-                             ->hidden(fn($get) => !$get('is_item')),
-
-                        ])->columnSpanFull(),
-
-                        Forms\Components\TextInput::make('quantity')
-                               ->default(1)
-                               ->numeric()
-                               ->required()
-                               ->live()
-                               ->disabled(fn ($get) => $get('is_service'))
-                               ->afterStateUpdated(function ($state, callable $set, $get) {
-                                   if ($get('is_service')) {
-                                       $set('quantity', 1);
-                                   }
-                               }),
-                        Forms\Components\TextInput::make('price')
-                                 ->required()
-                                 ->numeric()
-                                 ->live(debounce: 500)
-                                 ->label('Unit Price')
-                                 ->afterStateUpdated(function ($state, callable $set, $get, ?Invoice $record) {
-                                       $items = $get('../../items');
-                                       $total = 0;
-                                       if (is_array($items)) {
-                                           $total = collect($items)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
-                                       }
-                                       $set('../../amount', $total);
-                                       $set('../../credit_balance', self::outstandingBalance($total, $record));
-                                   }),
-                        Forms\Components\Checkbox::make('warranty_available')
-                            ->label('Is Warranty Available?')
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                // Reset warranty type when checkbox is unchecked
-                                if (!$state) {
-                                    $set('warranty_type', null);
-                                }
-                            }),
-                        Forms\Components\Select::make('warranty_type')
-                            ->label('Warranty Type')
-                            ->options([
-                                '1 month' => '1 Month',
-                                '3 months' => '3 Months',
-                                '6 months' => '6 Months',
-                                '1 year' => '1 Year',
-                                '2 years' => '2 Years',
-                                '3 years' => '3 Years',
-                            ])
-                            ->reactive()
-                            ->required(fn($get) => $get('warranty_available')) // Required if warranty is available
-                            ->disabled(fn($get) => !$get('warranty_available')), // Disable if warranty is not available
-                    ])
-                    ->reactive() // Make the repeater reactive
-                    ->afterStateUpdated(function ($state, callable $set, ?Invoice $record) {
-                        $total = collect($state)->sum(fn($item) => ((float)($item['quantity'] ?? 0)) * ((float)($item['price'] ?? 0)));
-
-                        $set('amount', $total);
-                        $set('credit_balance', self::outstandingBalance($total, $record));
-                    })->columnSpanFull()->collapsible()
-                    ->itemLabel(fn (array $state): ?string => $state['description'] ?? null),
-
-
-
-                Forms\Components\TextInput::make('amount')
-                    ->numeric()
-                    ->label('Total Amount')
-                    ->default(0)
-                    ->reactive(),
-
-                Forms\Components\TextInput::make('credit_balance')
-                    ->numeric()
-                    ->label('To Pay')
-                    ->default(0)
-                    ->reactive()
-
-            ]);
+    private static function itemsTotal(array $items): float
+    {
+        return (float) collect($items)->sum(fn (array $item): float => (($item['is_service'] ?? false) ? 1 : (float) ($item['quantity'] ?? 0)) * (float) ($item['price'] ?? 0));
     }
 
     private static function outstandingBalance(float $total, ?Invoice $invoice): float
     {
-        if (!$invoice) {
-            return $total;
-        }
-
-        $paid = $invoice->payments()->get()->sum(fn ($payment) =>
-            (float) $payment->amount_paid
-            + ($payment->discount_available ? (float) $payment->discount : 0)
-        );
+        $paid = $invoice?->payments()->get()->sum(fn ($payment): float => (float) $payment->amount_paid + ($payment->discount_available ? (float) $payment->discount : 0)) ?? 0;
 
         return max(0, $total - $paid);
     }
 
-
     public static function table(Table $table): Table
     {
-        return $table
-            ->defaultSort('created_at', 'desc')
+        return $table->modifyQueryUsing(fn (Builder $query) => $query->with(['customer', 'vehicle.brand']))
+            ->defaultSort('created_at', 'desc')->striped()->paginated([10, 25, 50])
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('Job ID')
-                    ->sortable()
-                    ->formatStateUsing(function ($state, $record) {
-                        return $state . ' - ' . ($record->is_invoice ? 'Job' : 'Quotation');
+                Tables\Columns\TextColumn::make('id')->label('Job ID')->sortable()->searchable()
+                    ->formatStateUsing(fn ($state, Invoice $record): string => $state.' - '.($record->is_invoice ? 'Job' : 'Quotation')),
+                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable()
+                    ->formatStateUsing(fn ($state, Invoice $record): string => trim(($record->customer?->title ?? '').' '.$state)),
+                Tables\Columns\TextColumn::make('vehicle.number')->label('Vehicle No.')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('model')->sortable()->searchable()->toggleable()
+                    ->formatStateUsing(fn ($state, Invoice $record): string => trim(
+                        ($record->vehicle?->getRelation('brand')?->name ?? $record->vehicle?->getRawOriginal('brand') ?? '').' '.$state)),
+                Tables\Columns\TextColumn::make('mileage')->sortable()->toggleable()
+                    ->formatStateUsing(fn ($state, Invoice $record): string => $state.($record->is_km ? ' km' : ' miles')),
+                Tables\Columns\TextColumn::make('amount')->label('Total amount')->money('LKR')->sortable(),
+                Tables\Columns\TextColumn::make('credit_balance')->label('To pay')->money('LKR')->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('payment_status')->label('Status')->badge()->sortable()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Partial Paid' => 'warning', 'Paid' => 'success', 'Unpaid' => 'danger', default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('customer.name')
-                    ->label('Customer')
-                    ->sortable()
-                    ->searchable()
-                    ->formatStateUsing(function ($state, $record) {
-                        return $record->customer->title . ' ' . $state; // Assuming customer relationship is loaded
-                    }),
-                Tables\Columns\TextColumn::make('vehicle.number')
-                    ->label('Vehicle No.')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('model')
-                    ->label('Model')
-                    ->sortable()
-                    ->formatStateUsing(function ($state, $record) {
-                        // Access the related vehicle and concatenate brand and model
-                        $vehicle = $record->vehicle; // Eager load the vehicle relationship
-                        $brand = $vehicle->brand->name ?? (string) $vehicle->brand;
-                        return $vehicle ? "{$brand} {$state}" : 'N/A'; // Return 'brand model' or 'N/A' if no vehicle
-                    }),
-                Tables\Columns\TextColumn::make('mileage')
-                    ->label('Mileage')
-                    ->sortable()
-                    ->formatStateUsing(function ($state, $record) {
-                        // Assuming 'is_km' is a boolean field in the Invoice model
-                        return $state . ' ' . ($record->is_km ? 'KM' : 'Miles');
-                    }),
-                Tables\Columns\TextColumn::make('amount')
-                    ->label('Total Amount')
-                    ->sortable(), // Format as currency
-                Tables\Columns\TextColumn::make('payment_status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Partial Paid' => 'warning',
-                        'Paid' => 'success',
-                        'Unpaid' => 'danger',
-                    })
-                    ->sortable(), // Format as currency
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Date Created')
-                    ->dateTime()
-                    ->sortable(), // Concatenate item details
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('Download PDF')
-                    ->url(fn(Invoice $record) => route('invoices.pdf', $record->id))
-                    ->icon('heroicon-o-printer')
-                    ->label('')
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                ])
+                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(),
+            ])->filters([
+                Tables\Filters\SelectFilter::make('payment_status')->label('Payment status')->options([
+                    'Unpaid' => 'Unpaid', 'Partial Paid' => 'Partial Paid', 'Paid' => 'Paid',
+                ]),
+                Tables\Filters\TernaryFilter::make('is_invoice')->label('Job type')->trueLabel('Invoices')->falseLabel('Quotations'),
+            ])->actions([
+                Tables\Actions\EditAction::make()->modalWidth('7xl'),
+                Tables\Actions\Action::make('download_pdf')->label('PDF')->icon('heroicon-o-printer')
+                    ->url(fn (Invoice $record): string => route('invoices.pdf', $record->id))->openUrlInNewTab(),
+            ])->bulkActions([
+                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
             ]);
     }
 
@@ -379,6 +289,7 @@ class InvoiceResource extends Resource
     {
         return [
             'index' => Pages\ManageInvoices::route('/'),
+            'create' => Pages\CreateInvoice::route('/create'),
         ];
     }
 }
