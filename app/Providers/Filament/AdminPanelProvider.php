@@ -2,7 +2,8 @@
 
 namespace App\Providers\Filament;
 
-use App\Filamemt\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget\TodayInvIncomeWidget;
+use App\Filament\Pages\Dashboard;
+use App\Filament\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget;
 use App\Filament\Resources\BatteryPackResource\Widgets\BatteryPacksOverview;
 use App\Filament\Resources\ModuleResource\Widgets\ModulesOverview;
 use App\Models\BatteryPack;
@@ -45,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([

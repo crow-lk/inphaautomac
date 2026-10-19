@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filamemt\Resources\InvoiceResource\Widgets\TodayInvIncomeWidget;
+namespace App\Filament\Resources\InvoiceResource\Widgets;
 
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
