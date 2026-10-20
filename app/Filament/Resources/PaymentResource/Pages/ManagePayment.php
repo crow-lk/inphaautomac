@@ -18,15 +18,6 @@ class ManagePayments extends ManageRecords
         ];
     }
 
-    // Customize the actions for each row (edit and delete)
-    protected function getTableActions(): array
-    {
-        return [
-            Actions\EditAction::make(), // This will allow editing a specific payment
-            Actions\DeleteAction::make(), // This will allow deleting a specific payment
-        ];
-    }
-
     // Customize the table column actions or modify the table columns if needed
     protected function getTableColumns(): array
     {

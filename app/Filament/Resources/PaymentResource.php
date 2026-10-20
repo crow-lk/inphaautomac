@@ -24,6 +24,21 @@ class PaymentResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Invoicing';
 
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -36,7 +51,7 @@ class PaymentResource extends Resource
                     ->schema([
                         Select::make('invoice_id')
                             ->label('Invoice ID')
-                            ->relationship('invoice', 'id')
+                            ->relationship('invoice', 'id', fn ($query) => $query->orderByDesc('id'))
                             ->required()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
@@ -81,9 +96,9 @@ class PaymentResource extends Resource
                             ->required(),
 
                             DateTimePicker::make('payment_date')
-                            ->label('Payment Date')
+                            ->label('Payment Date & Time')->timezone('Asia/Colombo')->seconds(false)
                             ->required()
-                            ->default(now()),
+                            ->default(fn () => now()),
 
                         Textarea::make('notes')
                             ->label('Notes')
@@ -146,21 +161,35 @@ class PaymentResource extends Resource
                 TextColumn::make('discount')->label('Discount')->sortable(),
                 //payment method
                 TextColumn::make('payment_method')->label('Payment Method')->sortable(),
-                TextColumn::make('payment_date')->label('Payment Date')->sortable(),
+                TextColumn::make('payment_date')->label('Payment Date & Time')->dateTime('Y-m-d h:i A')->timezone('Asia/Colombo')->sortable(),
+                TextColumn::make('status')->label('Status')->badge()->getStateUsing(fn (Payment $record) => $record->reversed_at ? 'Reversed' : 'Active')->color(fn ($state) => $state === 'Reversed' ? 'danger' : 'success'),
             ])
             ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('reversePayment')
+                    ->label('Reverse payment')->icon('heroicon-o-arrow-uturn-left')->color('danger')
+                    ->visible(fn (Payment $record): bool => $record->reversed_at === null)
+                    ->requiresConfirmation()->modalHeading('Reverse payment')
+                    ->modalDescription('Reverse this payment and its payment discount, restore the invoice balance, and notify the customer by SMS.')
+                    ->modalSubmitActionLabel('Reverse payment')
+                    ->form([Textarea::make('reversal_reason')->label('Reason')->required()->maxLength(1000)])
+                    ->action(function (Payment $record, array $data): void {
+                        $sent = $record->reverse($data['reversal_reason'], auth()->id());
+                        $notification = \Filament\Notifications\Notification::make();
+                        if ($sent) {
+                            $notification->title('Payment reversed and SMS sent')->success();
+                        } else {
+                            $notification->title('Payment reversed; SMS could not be sent')
+                                ->body('The invoice balance has been restored. Check the customer phone number and SMS service.')->warning();
+                        }
+                        $notification->send();
+                    }),
                 Tables\Actions\Action::make('Download PDF')
                     ->url(fn(Payment $record) => route('invoices.pdf', $record->invoice_id))
                     ->icon('heroicon-o-printer')
                     ->label('')
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                ])
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getPages(): array

@@ -81,6 +81,18 @@ class InvoiceResource extends Resource
         return Repeater::make('items')->relationship('invoiceItems')->hiddenLabel()
             ->addable(false)->defaultItems(0)->minItems(1)->columnSpanFull()
             ->view('filament.forms.components.job-items-table')->reorderable(false)->columns(2)
+            ->extraItemActions([
+                Action::make('confirmPrice')->label('Confirm changes')->icon('heroicon-m-check')->color('warning')
+                    ->extraAttributes(['style' => 'background-color: #eab308; color: #ffffff;'])
+                    ->tooltip('Confirm price, quantity and discount and update totals')
+                    ->action(function (array $arguments, Repeater $component): void {
+                        $row = $component->getItemState($arguments['item']);
+                        $items = $component->getState();
+                        $items[$arguments['item']]['confirmed_values'] = ['price' => $row['price'], 'quantity' => $row['quantity'], 'discount' => $row['discount'] ?? 0];
+                        $component->state($items);
+                        $component->callAfterStateUpdated();
+                    }),
+            ])
             ->itemLabel(function (array $state): string {
                 $service = (bool) ($state['is_service'] ?? false);
                 $name = $service
@@ -91,6 +103,10 @@ class InvoiceResource extends Resource
                     .' | Qty '.($state['quantity'] ?? 1).' | LKR '.number_format(self::itemsTotal([$state]), 2);
             })
             ->schema([
+                Hidden::make('confirmed_values')->dehydrated(false)
+                    ->afterStateHydrated(function (Hidden $component, Get $get): void {
+                        $component->state(['price' => $get('price'), 'quantity' => $get('quantity'), 'discount' => $get('discount') ?? 0]);
+                    }),
                 Toggle::make('is_service')->label('Service')->live()
                     ->afterStateUpdated(function (bool $state, Set $set) {
                         $set('is_item', ! $state);
@@ -127,9 +143,11 @@ class InvoiceResource extends Resource
                     })
                     ->createOptionForm(self::newItemSchema())
                     ->createOptionUsing(fn (array $data) => Item::create($data)->getKey())->columnSpanFull(),
-                TextInput::make('quantity')->numeric()->required()->default(1)->minValue(0.001)->live(debounce: 300)
+                TextInput::make('quantity')->numeric()->required()->default(1)->minValue(0.001)->live(condition: false)
                     ->disabled(fn (Get $get): bool => (bool) $get('is_service'))->dehydrated(),
-                TextInput::make('price')->label('Unit price')->prefix('LKR')->numeric()->required()->minValue(0)->live(debounce: 300),
+                TextInput::make('price')->label('Unit price')->prefix('LKR')->numeric()->required()->minValue(0)->live(condition: false),
+                TextInput::make('discount')->label('Line discount')->prefix('LKR')->numeric()->nullable()->default(0)->dehydrateStateUsing(fn ($state) => $state ?? 0)->minValue(0)
+                    ->maxValue(fn (Get $get): float => (float) ($get('quantity') ?? 1) * (float) ($get('price') ?? 0))->live(condition: false),
                 Toggle::make('warranty_available')->label('Warranty available')->live()
                     ->afterStateUpdated(function (bool $state, Set $set) {
                         if (! $state) {
@@ -150,6 +168,21 @@ class InvoiceResource extends Resource
             });
     }
 
+    public static function validateConfirmedItems(array $items, string $statePath = 'data'): void
+    {
+        $errors = [];
+        foreach ($items as $key => $item) {
+            foreach (['price', 'quantity', 'discount'] as $field) {
+                if (! array_key_exists($field, $item['confirmed_values'] ?? [])
+                    || (string) ($item[$field] ?? ($field === 'discount' ? 0 : '')) !== (string) $item['confirmed_values'][$field]) {
+                    $errors[$statePath.'.items.'.$key.'.'.$field] = 'Click the yellow confirm button (✓) to confirm this row before saving the invoice.';
+                }
+            }
+        }
+        if ($errors !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+    }
     private static function itemDetailsAction(string $type): Action
     {
         $model = $type === 'service' ? Service::class : Item::class;
@@ -171,6 +204,8 @@ class InvoiceResource extends Resource
                 TextInput::make('quantity')->numeric()->required()->default(1)->minValue(0.001)
                     ->disabled($type === 'service')->dehydrated(),
                 TextInput::make('price')->label('Unit price')->prefix('LKR')->numeric()->required()->default(0)->minValue(0),
+                TextInput::make('discount')->label('Line discount')->prefix('LKR')->numeric()->nullable()->default(0)->dehydrateStateUsing(fn ($state) => $state ?? 0)->minValue(0)
+                    ->maxValue(fn (Get $get): float => (float) ($get('quantity') ?? 1) * (float) ($get('price') ?? 0))->live(onBlur: true),
                 Toggle::make('warranty_available')->label('Warranty available')->default(false)->live()
                     ->afterStateUpdated(function (bool $state, Set $set) {
                         if (! $state) {
@@ -192,6 +227,8 @@ class InvoiceResource extends Resource
                     'item_id' => $service ? null : $data['catalogue_id'],
                     'quantity' => $service ? 1 : $data['quantity'],
                     'price' => $data['price'],
+                    'discount' => $data['discount'] ?? 0,
+                    'confirmed_values' => ['price' => $data['price'], 'quantity' => $service ? 1 : $data['quantity'], 'discount' => $data['discount'] ?? 0],
                     'warranty_available' => (bool) ($data['warranty_available'] ?? false),
                     'warranty_type' => ($data['warranty_available'] ?? false) ? ($data['warranty_type'] ?? null) : null,
                 ];
@@ -239,7 +276,7 @@ class InvoiceResource extends Resource
 
     private static function itemsTotal(array $items): float
     {
-        return (float) collect($items)->sum(fn (array $item): float => (($item['is_service'] ?? false) ? 1 : (float) ($item['quantity'] ?? 0)) * (float) ($item['price'] ?? 0));
+        return (float) collect($items)->sum(fn (array $item): float => max(0, (($item['is_service'] ?? false) ? 1 : (float) ($item['quantity'] ?? 0)) * (float) ($item['price'] ?? 0) - (float) ($item['discount'] ?? 0)));
     }
 
     private static function outstandingBalance(float $total, ?Invoice $invoice): float
@@ -277,7 +314,7 @@ class InvoiceResource extends Resource
                 ]),
                 Tables\Filters\TernaryFilter::make('is_invoice')->label('Job type')->trueLabel('Invoices')->falseLabel('Quotations'),
             ])->actions([
-                Tables\Actions\EditAction::make()->modalWidth('7xl'),
+                Tables\Actions\EditAction::make()->url(fn (Invoice $record): string => self::getUrl('edit', ['record' => $record])),
                 Tables\Actions\Action::make('download_pdf')->label('PDF')->icon('heroicon-o-printer')
                     ->url(fn (Invoice $record): string => route('invoices.pdf', $record->id))->openUrlInNewTab(),
             ])->bulkActions([
@@ -290,6 +327,7 @@ class InvoiceResource extends Resource
         return [
             'index' => Pages\ManageInvoices::route('/'),
             'create' => Pages\CreateInvoice::route('/create'),
+            'edit' => Pages\EditInvoice::route('/{record}/edit'),
         ];
     }
 }

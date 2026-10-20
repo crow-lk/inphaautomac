@@ -10,7 +10,12 @@ class InvoiceItem extends Model
     use HasFactory;
 
     protected $fillable = ['invoice_id', 'service_id', 'item_id', 'quantity', 'warranty_available',
-        'warranty_type', 'price', 'is_service', 'is_item'];
+        'warranty_type', 'price', 'discount', 'is_service', 'is_item'];
+
+    public function getNetTotalAttribute(): float
+    {
+        return max(0, ($this->is_service ? 1 : (float) $this->quantity) * (float) $this->price - (float) $this->discount);
+    }
 
     protected static function boot()
     {

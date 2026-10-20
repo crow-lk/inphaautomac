@@ -10,6 +10,11 @@ class EditInvoice extends EditRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    protected function beforeValidate(): void
+    {
+        InvoiceResource::validateConfirmedItems($this->form->getRawState()['items'] ?? [], $this->form->getStatePath());
+    }
+
     protected function getHeaderActions(): array
     {
         return [

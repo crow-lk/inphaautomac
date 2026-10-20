@@ -35,7 +35,7 @@ class IncomeReport extends Page
             ->pluck('id');
 
         // Get payments for those invoices
-        $partialPaymentsQuery = Payment::whereIn('invoice_id', $partialInvoiceIds);
+        $partialPaymentsQuery = Payment::active()->whereIn('invoice_id', $partialInvoiceIds);
 
         // Apply date filter (payment_date)
         if ($start && $end) {
@@ -52,7 +52,7 @@ class IncomeReport extends Page
             ->map(function ($group) {
                 return [
                     'name' => $group->first()->service->name ?? 'Other Services',
-                    'total' => $group->sum(fn($i) => $i->quantity * $i->price),
+                    'total' => $group->sum(fn($i) => $i->net_total),
                 ];
             })->values(),
 
@@ -63,7 +63,7 @@ class IncomeReport extends Page
                 return [
                     'name' => $group->first()->item->name ?? 'Other Items',
                     'quantity' => $group->sum('quantity'),
-                    'total' => $group->sum(fn($i) => $i->quantity * $i->price),
+                    'total' => $group->sum(fn($i) => $i->net_total),
                 ];
             })->values(),
 

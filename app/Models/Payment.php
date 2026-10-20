@@ -21,6 +21,7 @@ class Payment extends Model
 
     protected $casts = [
         'payment_date' => 'datetime',
+        'reversed_at' => 'datetime',
     ];
 
 
@@ -29,6 +30,54 @@ class Payment extends Model
         return $this->belongsTo(Invoice::class);
     }
 
+    public function scopeActive($query)
+    {
+        return $query->whereNull('reversed_at');
+    }
+
+    public function reverse(string $reason, ?int $userId = null): bool
+    {
+        if (trim($reason) === '') {
+            throw \Illuminate\Validation\ValidationException::withMessages(['reversal_reason' => 'Enter a reason for reversal.']);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($reason, $userId) {
+            $invoice = Invoice::whereKey($this->invoice_id)->lockForUpdate()->firstOrFail();
+            $payment = static::whereKey($this->getKey())->lockForUpdate()->firstOrFail();
+            if ($payment->reversed_at !== null) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['reversal_reason' => 'This payment has already been reversed.']);
+            }
+            // Bypass receipt notifications and balance adjustments for ordinary payment edits.
+            $payment->forceFill([
+                'reversed_at' => now(),
+                'reversed_by' => $userId,
+                'reversal_reason' => trim($reason),
+            ])->saveQuietly();
+            $invoice->recalculateTotals();
+        });
+
+        $this->refresh();
+        $invoice = $this->invoice()->with('customer')->firstOrFail();
+        $customer = $invoice->customer;
+        if (! $customer?->phone) {
+            return false;
+        }
+        $message = "Your payment is reversed.\nReversed amount: LKR ".number_format($this->amount_paid, 2)."\n"
+            ."Invoice ID: {$invoice->id}\nReference ID: {$this->reference_number}\n"
+            ."Payment discount reversed: LKR ".number_format($this->discount_available ? $this->discount : 0, 2)."\n"
+            ."Updated balance: LKR ".number_format($invoice->credit_balance, 2)."\n"
+            ."Inpha Auto Mac & Hybrid Care";
+        try {
+            app(SmsApi::class)->sendSMS(
+                env('NOTIFYLK_USER_ID'), env('NOTIFYLK_API_KEY'), $message,
+                self::formatPhoneNumber($customer->phone), 'Inpha Auto'
+            );
+            return true;
+        } catch (\Throwable $exception) {
+            Log::error('Payment reversal SMS failed', ['payment_id' => $this->id, 'error' => $exception->getMessage()]);
+            return false;
+        }
+    }
     protected static function booted()
     {
         static::creating(function ($payment) {

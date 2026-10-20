@@ -20,7 +20,7 @@ class FinanceOverview extends StatsOverviewWidget
         $start = $today->copy()->startOfMonth();
         $end = $today->copy()->endOfDay();
         $invoices = Invoice::query()->where('is_invoice', true);
-        $payments = Payment::query()->whereHas('invoice', fn ($query) => $query->where('is_invoice', true));
+        $payments = Payment::query()->active()->whereHas('invoice', fn ($query) => $query->where('is_invoice', true));
         $receivedToday = (clone $payments)->whereDate('payment_date', $today)->sum('amount_paid');
         $receivedMonth = (clone $payments)->whereBetween('payment_date', [$start, $end])->sum('amount_paid');
         $invoicedMonth = (clone $invoices)->whereBetween('created_at', [$start, $end])->sum('amount');

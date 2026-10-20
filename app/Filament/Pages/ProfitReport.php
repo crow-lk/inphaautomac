@@ -85,7 +85,7 @@ class ProfitReport extends Page
             ->groupBy(fn ($i) => $i->service->name ?? 'Service')
             ->map(fn ($group) => [
                 'name'  => $group->first()->service->name ?? 'Other Services',
-                'total' => $group->sum(fn ($i) => $i->quantity * $i->price),
+                'total' => $group->sum(fn ($i) => $i->net_total),
                 'created_at' => $group->first()->created_at->format('Y-m-d'),
             ])->values();
 
@@ -95,7 +95,7 @@ class ProfitReport extends Page
             ->map(fn ($group) => [
                 'name'     => $group->first()->item->name ?? 'Other Items',
                 'quantity' => $group->sum('quantity'),
-                'total'    => $group->sum(fn ($i) => $i->quantity * $i->price),
+                'total'    => $group->sum(fn ($i) => $i->net_total),
                 'created_at' => $group->first()->created_at->format('Y-m-d'),
             ])->values();
 
@@ -103,7 +103,7 @@ class ProfitReport extends Page
         $partialInvoiceIds = Invoice::where('payment_status', 'Partial Paid')
             ->pluck('id');
 
-        $partialPaymentQuery = Payment::whereIn('invoice_id', $partialInvoiceIds);
+        $partialPaymentQuery = Payment::active()->whereIn('invoice_id', $partialInvoiceIds);
 
         if ($start && $end) {
             $partialPaymentQuery->whereBetween('payment_date', [$start, $end]);

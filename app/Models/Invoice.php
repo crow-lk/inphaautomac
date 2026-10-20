@@ -41,13 +41,13 @@ class Invoice extends Model
 
     public function payments()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Payment::class)->active();
     }
 
     public function recalculateTotals(): void
     {
         $total = (float) $this->invoiceItems()
-            ->selectRaw('COALESCE(SUM(quantity * price), 0) as total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN quantity * price > COALESCE(discount, 0) THEN quantity * price - COALESCE(discount, 0) ELSE 0 END), 0) as total')
             ->value('total');
 
         $paid = $this->payments()->get()->sum(function (Payment $payment): float {
@@ -74,7 +74,7 @@ class Invoice extends Model
             }
 
             $total = (float) $invoice->invoiceItems()
-                ->selectRaw('COALESCE(SUM(quantity * price), 0) as total')
+                ->selectRaw('COALESCE(SUM(CASE WHEN quantity * price > COALESCE(discount, 0) THEN quantity * price - COALESCE(discount, 0) ELSE 0 END), 0) as total')
                 ->value('total');
             $paid = $invoice->payments()->get()->sum(function (Payment $payment): float {
                 return (float) $payment->amount_paid

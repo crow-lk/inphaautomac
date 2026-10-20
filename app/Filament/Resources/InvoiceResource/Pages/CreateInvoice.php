@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateInvoice extends CreateRecord
 {
     protected static string $resource = InvoiceResource::class;
+
+    protected function beforeValidate(): void
+    {
+        InvoiceResource::validateConfirmedItems($this->form->getRawState()['items'] ?? [], $this->form->getStatePath());
+    }
 }
