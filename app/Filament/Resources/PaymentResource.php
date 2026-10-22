@@ -154,8 +154,9 @@ class PaymentResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('reference_number')->label('Reference Number')->sortable(),
-                TextColumn::make('invoice_id')->label('Invoice')->sortable(),
+                TextColumn::make('reference_number')->label('Reference Number')->sortable()->searchable(),
+                TextColumn::make('invoice_id')->label('Invoice')->sortable()->searchable(),
+                TextColumn::make('invoice.vehicle.number')->label('Vehicle No.')->sortable()->searchable(),
                 TextColumn::make('invoice.amount')->label('Total')->sortable(),
                 TextColumn::make('amount_paid')->label('Amount Paid')->sortable(),
                 TextColumn::make('discount')->label('Discount')->sortable(),
