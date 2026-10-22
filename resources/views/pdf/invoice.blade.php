@@ -18,7 +18,7 @@
             @else
             <p><strong>Quotation No:</strong> {{ $invoice->id }}</p>
             @endif
-            <p>{{ $invoice->created_at->format('F j, Y') }}</p>
+            <p>{{ ($invoice->invoice_date ?? $invoice->created_at)->format('F j, Y') }}</p>
         </div>
         <div class="left">
             <p><strong>Invoice to:</strong></p>

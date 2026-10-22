@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Service;
 use App\Models\Vehicle;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
@@ -41,6 +42,13 @@ class InvoiceResource extends Resource
             Section::make('Job details')->schema([
                 self::exclusiveToggle('is_invoice', 'Job Invoice', 'is_quatation'),
                 self::exclusiveToggle('is_quatation', 'Job Quotation', 'is_invoice'),
+                DatePicker::make('invoice_date')->label('Invoice date')->required()
+                    ->default(fn () => now('Asia/Colombo')->toDateString())
+                    ->afterStateHydrated(function (DatePicker $component, $state, ?Invoice $record): void {
+                        if (blank($state) && $record) {
+                            $component->state($record->created_at?->toDateString());
+                        }
+                    }),
                 Select::make('customer_id')->relationship('customer', 'name')->searchable()->required()->live()
                     ->afterStateUpdated(function (Set $set) {
                         $set('vehicle_id', null);
@@ -307,7 +315,7 @@ class InvoiceResource extends Resource
                     ->color(fn (?string $state): string => match ($state) {
                         'Partial Paid' => 'warning', 'Paid' => 'success', 'Unpaid' => 'danger', default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('updated_at')->label('Updated')->dateTime()->sortable()->toggleable(),
             ])->filters([
                 Tables\Filters\SelectFilter::make('payment_status')->label('Payment status')->options([
                     'Unpaid' => 'Unpaid', 'Partial Paid' => 'Partial Paid', 'Paid' => 'Paid',
