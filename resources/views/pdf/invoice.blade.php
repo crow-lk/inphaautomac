@@ -87,18 +87,22 @@
                     <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Grand Total:</td>
                     <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($invoice->amount, 2) }}</td>
                 </tr>
+                @php
+                    $totalDiscount = $invoice->invoiceItems->sum('discount')
+                        + $payments->where('discount_available', true)->sum('discount');
+                @endphp
+                    @if($totalDiscount > 0)
+                        <tr>
+                            <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Total Discount:</td>
+                            <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($totalDiscount, 2) }}</td>
+                        </tr>
+                    @endif
+
                 <tr>
                     <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Paid Amount:</td>
                     <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($totalPaid, 2) }}</td>
                 </tr>
-                @foreach ($payments as $payment)
-                    @if($payment->discount_available)
-                        <tr>
-                            <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Discount:</td>
-                            <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($payment->discount, 2) }}</td>
-                        </tr>
-                    @endif
-                @endforeach
+
                 @if($invoice->credit_balance > 0)
                     <tr>
                         <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">To Pay:</td>
