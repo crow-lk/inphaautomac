@@ -38,10 +38,10 @@
         <thead>
             <tr>
                 <th style="width:7%; text-align: center;">No</th>
-                <th style="width:33%; text-align: left;">Description</th>
+                <th style="width:50%; text-align: left;">Description</th>
                 <th style="width:18%; text-align: right;">Unit Price(LKR)</th>
                 <th style="width:7%; text-align: center;">Qty</th>
-                <th style="width:17%; text-align: right;">Discount(LKR)</th><th style="width:18%; text-align: right;">Total(LKR)</th>
+                <th style="width:18%; text-align: right;">Total(LKR)</th>
             </tr>
         </thead>
         <tbody>
@@ -49,7 +49,7 @@
                 @if($item->is_item || $item->is_service)
                     <tr>
                         <td style="width:7%; text-align: center; font-size: 11px;">{{ $index + 1 }}</td>
-                        <td style="width:33%; text-align: left; font-size: 11px;">
+                        <td style="width:50%; text-align: left; font-size: 11px;">
                              @if($item->is_item)
                                   {{ $item->item->name ?? 'N/A' }} <!-- Display item name -->
                                   @if($item->warranty_available)
@@ -78,35 +78,38 @@
                                 {{ $item->quantity }} <!-- Show quantity only for items -->
                             @endif
                         </td>
-                        <td style="width:17%; text-align: right; font-size: 11px;">{{ number_format($item->discount ?? 0, 2) }}</td><td style="width:18%; text-align: right; font-size: 11px;">{{ number_format($item->net_total, 2) }}</td>
+                        <td style="width:18%; text-align: right; font-size: 11px;">{{ number_format(($item->is_service ? 1 : (float) $item->quantity) * (float) $item->price, 2) }}</td>
                     </tr>
                 @endif
             @endforeach
             @if($showGrandTotal)
-                <tr>
-                    <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Grand Total:</td>
-                    <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($invoice->amount, 2) }}</td>
-                </tr>
                 @php
-                    $totalDiscount = $invoice->invoiceItems->sum('discount')
+                    $summaryItems = $invoice->invoiceItems->filter(fn ($item) => $item->is_item || $item->is_service);
+                    $grandTotal = $summaryItems->sum(fn ($item) => ($item->is_service ? 1 : (float) $item->quantity) * (float) $item->price);
+                    $totalDiscount = $summaryItems->sum('discount')
                         + $payments->where('discount_available', true)->sum('discount');
+                    $toPay = max(0, $grandTotal - $totalDiscount - $totalPaid);
                 @endphp
-                    @if($totalDiscount > 0)
+                <tr>
+                    <td colspan="4" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Grand Total:</td>
+                    <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($grandTotal, 2) }}</td>
+                </tr>
+                @if($totalDiscount > 0)
                         <tr>
-                            <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Total Discount:</td>
+                            <td colspan="4" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Total Discount:</td>
                             <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($totalDiscount, 2) }}</td>
                         </tr>
                     @endif
 
                 <tr>
-                    <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Paid Amount:</td>
+                    <td colspan="4" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">Paid Amount:</td>
                     <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($totalPaid, 2) }}</td>
                 </tr>
 
-                @if($invoice->credit_balance > 0)
+                @if($toPay > 0)
                     <tr>
-                        <td colspan="5" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">To Pay:</td>
-                        <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($invoice->credit_balance, 2) }}</td>
+                        <td colspan="4" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">To Pay:</td>
+                        <td colspan="1" style="text-align: right; font-weight: bold; font-size: 12px; background-color: #ddd;">{{ number_format($toPay, 2) }}</td>
                     </tr>
                 @endif
             @endif
